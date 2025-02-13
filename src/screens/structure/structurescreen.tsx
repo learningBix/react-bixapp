@@ -1,4 +1,3 @@
-// StructureScreen.tsx
 import React from 'react';
 import { SafeAreaView, ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -26,43 +25,47 @@ const structureCategories = [
 ];
 
 const StructureScreen: React.FC<StructureScreenProps> = ({ navigation }) => {
+
   const handleNavigation = (item: string) => {
     if (item === "Home Surveillance") {
       navigation.navigate('HomeScreenSurveillance');
     } else if (item === "Hall sensor security cam") {
       navigation.navigate('HallSensorScreen');
     }
+    // Add additional navigation logic if needed
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.welcomeText}>Structure Details</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollView}
       >
-        {structureCategories.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.box}
-            onPress={() => handleNavigation(item)}
-          >
-            <Icon
-              name={structureCategoryIcons[index]}
-              size={30}
-              color="#FFFFFF"
-              style={styles.icon}
-            />
-            <Text
-              style={styles.boxText}
-              numberOfLines={2}
-              adjustsFontSizeToFit
+        {/* Container for the 2x3 grid layout */}
+        <View style={styles.gridContainer}>
+          {structureCategories.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.box}
+              onPress={() => handleNavigation(item)}
             >
-              {item}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Icon
+                name={structureCategoryIcons[index]}
+                size={40}
+                color="#000000"  // Set icon color to black
+                style={styles.icon}
+              />
+              <Text
+                style={styles.boxText}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -76,45 +79,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     padding: 20,
   },
-  welcomeText: {
-    fontSize: 50,
-    fontWeight: '900',
-    color: 'rgb(32, 59, 147)',
-    textAlign: 'left',
-    marginVertical: 10,
-    letterSpacing: -1.5,
-  },
   scrollView: {
-    flexDirection: 'row',
+    flexDirection: 'row',  // Ensure horizontal scrolling
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
   },
+  gridContainer: {
+    flexDirection: 'row',  // Arrange items in a row
+    flexWrap: 'wrap',      // Allow items to wrap into a new row
+    justifyContent: 'flex-start', // Align items to the start
+    width: '100%',
+  },
   box: {
-    width: 220,
-    height: 220,
+    width: 180,   // Adjust width for bigger boxes
+    height: 240,  // Adjust height for bigger boxes
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 15,
-    borderRadius: 30,
-    backgroundColor: 'rgb(32, 59, 147)',
-    shadowColor: '#F7D547',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.7,
-    shadowRadius: 12,
-    elevation: 10,
-    borderWidth: 5,
-    borderColor: '#FFFFFF',
+    marginHorizontal: 20,  // Space between items horizontally
+    marginVertical: 20,    // Space between rows
+    borderRadius: 12,
+    backgroundColor: '#A5D6A7',  // Light green background
+    borderWidth: 3,
+    borderColor: '#FFFFFF',  // White border
   },
   boxText: {
-    fontSize: 26,
+    fontSize: 18,  // Adjust font size for readability
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#000000',
     textAlign: 'center',
   },
   icon: {
     marginBottom: 12,
-    color: '#FFFFFF',
+    color: '#000000',  // Ensure icon color is black
     fontSize: 40,
   },
 });

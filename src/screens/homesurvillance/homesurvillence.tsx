@@ -520,6 +520,7 @@ const HomeScreenSurveillance: React.FC = () => {
         const now = Date.now();
 
         if (now - lastSentTime.current < 50) {
+
             return;
         }
 
@@ -551,10 +552,10 @@ const HomeScreenSurveillance: React.FC = () => {
         <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
             {/* <View style={styles.header}> */}
                 {/* <Text style={styles.title}>Surveillance Control</Text> */}
-                <View style={styles.statusContainer}>
+                {/* <View style={styles.statusContainer}>
                     <Ionicons name="radio-button-on" size={14} color={toggleEnabled ? '#4CAF50' : '#BDBDBD'} />
                     <Text style={styles.statusText}>{toggleEnabled ? 'Connected' : 'Disconnected'}</Text>
-                </View>
+                </View> */}
             {/* </View> */}
 
             <View style={styles.content}>

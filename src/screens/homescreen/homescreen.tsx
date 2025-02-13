@@ -2,7 +2,7 @@ import React from 'react';
 import { ScrollView, View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Animated } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../App'; // Ensure correct import path
+import { RootStackParamList } from '../../App';
 
 type HomeScreenProps = {
     navigation: StackNavigationProp<RootStackParamList, 'Home'>;
@@ -16,7 +16,7 @@ const categories = [
 const categoryIcons = [
     "building",
     "cogs",
-    "robot",
+    "lightbulb-o",
     "car",
     "server",
     "keyboard-o",
@@ -29,10 +29,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.welcomeContainer}>
-                <Icon name="rocket" size={50} color="rgb(32, 59, 147)" style={styles.welcomeIcon} />
-                <Text style={styles.welcomeText}>Welcome to BixCode!</Text>
-            </View>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -44,7 +40,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                             onPress={() => item === "Structure" ? navigation.navigate('StructureScreen') : null}
                             style={styles.touchable}
                         >
-                            <Icon name={categoryIcons[index]} size={30} color="#FFFFFF" style={styles.icon} />
+                            <Icon name={categoryIcons[index]} size={40} color="black" style={styles.icon} />
                             <Text style={styles.boxText} numberOfLines={2} adjustsFontSizeToFit>{item}</Text>
                         </TouchableOpacity>
                     </Animated.View>
@@ -55,15 +51,45 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FFFFFF', padding: 20 },
-    welcomeContainer: { flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 20 },
-    welcomeIcon: { marginRight: 10 },
-    welcomeText: { fontSize: 50, fontWeight: '900', color: 'rgb(32, 59, 147)', textAlign: 'left' },
-    scrollView: { flexDirection: 'row', paddingVertical: 20 },
-    box: { width: 220, height: 220, justifyContent: 'center', alignItems: 'center', marginHorizontal: 15, borderRadius: 30, backgroundColor: 'rgb(32, 59, 147)', borderWidth: 5, borderColor: '#FFFFFF' },
-    boxText: { fontSize: 26, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' },
-    icon: { marginBottom: 12, fontSize: 40 },
-    touchable: { flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingVertical: 25 },
+    container: { 
+        flex: 1, 
+        backgroundColor: 'white', 
+        padding: 20, 
+        justifyContent: 'center',  // Centers vertically
+        alignItems: 'center'  // Centers horizontally
+    },
+    scrollView: { 
+        flexDirection: 'row', 
+        paddingVertical: 40,  // Increased vertical padding for space 
+    },
+    box: { 
+        width: 250,  // Increased box size
+        height: 250,  // Increased box size
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        marginHorizontal: 20,  // Increased horizontal margin for more space between boxes
+        marginBottom: 30,  // Added space between rows of boxes
+        borderRadius: 30, 
+        backgroundColor: '#a5d6a7',  // Darker shade of #e8f5e9
+    },
+    boxText: { 
+        fontSize: 28, 
+        fontWeight: 'bold', 
+        color: 'black', 
+        textAlign: 'center', 
+        paddingHorizontal: 10,  // Added padding for better spacing of text
+    },
+    icon: { 
+        marginBottom: 15, 
+        fontSize: 50, 
+        color: 'black' 
+    },
+    touchable: { 
+        flexDirection: 'column', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        paddingVertical: 30 
+    },
 });
 
 export default HomeScreen;
