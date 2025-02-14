@@ -31,6 +31,8 @@ const StructureScreen: React.FC<StructureScreenProps> = ({ navigation }) => {
       navigation.navigate('HomeScreenSurveillance');
     } else if (item === "Hall sensor security cam") {
       navigation.navigate('HallSensorScreen');
+    } else if (item === "IOT cam") { // Ensure this matches the category in the array
+      navigation.navigate("DevicesIotScreen"); // Correctly reference the screen name
     }
     // Add additional navigation logic if needed
   };
@@ -42,7 +44,6 @@ const StructureScreen: React.FC<StructureScreenProps> = ({ navigation }) => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollView}
       >
-        {/* Container for the 2x3 grid layout */}
         <View style={styles.gridContainer}>
           {structureCategories.map((item, index) => (
             <TouchableOpacity
@@ -53,14 +54,10 @@ const StructureScreen: React.FC<StructureScreenProps> = ({ navigation }) => {
               <Icon
                 name={structureCategoryIcons[index]}
                 size={40}
-                color="#000000"  // Set icon color to black
+                color="#000000"
                 style={styles.icon}
               />
-              <Text
-                style={styles.boxText}
-                numberOfLines={2}
-                adjustsFontSizeToFit
-              >
+              <Text style={styles.boxText} numberOfLines={2} adjustsFontSizeToFit>
                 {item}
               </Text>
             </TouchableOpacity>
@@ -70,6 +67,9 @@ const StructureScreen: React.FC<StructureScreenProps> = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
+
+
 
 const styles = StyleSheet.create({
   container: {

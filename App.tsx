@@ -6,6 +6,7 @@ import HomeScreen from './src/screens/homescreen/homescreen';
 import HallSensorScreen from './src/screens/hallsensor/hallsensor';
 import StructureScreen from './src/screens/structure/structurescreen';
 import HomeScreenSurveillance from './src/screens/homesurvillance/homesurvillence'; 
+import DevicesIotScreen from './src/screens/iotdevices/iot';
 import { MD3LightTheme as DefaultTheme, PaperProvider } from 'react-native-paper';
 
 const theme = {
@@ -21,8 +22,8 @@ type RootStackParamList = {
   StructureScreen: undefined;
   HomeScreenSurveillance: undefined;
   HallSensorScreen: undefined;
+  DevicesIotScreen: undefined;
 };
-
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -35,6 +36,7 @@ const App: React.FC = () => {
           <Stack.Screen name="StructureScreen" component={StructureScreen} />
           <Stack.Screen name="HomeScreenSurveillance" component={HomeScreenSurveillance} />
           <Stack.Screen name="HallSensorScreen" component={HallSensorScreen} options={{ title: 'Hall Sensor' }}/>
+          <Stack.Screen name="DevicesIotScreen" component={DevicesIotScreen} options={{ title: 'IoT Camera' }}/>
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
