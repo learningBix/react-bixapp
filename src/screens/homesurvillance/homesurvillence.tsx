@@ -465,6 +465,12 @@
 
 // // export default HomeScreenSurveillance;
 
+
+
+
+
+
+////////real code starts
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Dimensions } from 'react-native';
 import Slider from '@react-native-community/slider';
@@ -535,7 +541,7 @@ const HomeScreenSurveillance: React.FC = () => {
 
         client.bind(0, () => {
             const message = Buffer.from([0xC3, angle]);
-            client.send(message, 0, message.length, 8888, '192.168.0.101', (error) => {
+            client.send(message, 0, message.length, 8888, '192.168.0.196', (error) => {
                 if (error) {
                     console.error('UDP Send Error:', error);
                 }
@@ -562,7 +568,7 @@ const HomeScreenSurveillance: React.FC = () => {
                 <View style={styles.cameraCard}>
                     {toggleEnabled ? (
                         <WebView
-                            source={{ uri: 'http://192.168.0.101:81/stream' }}
+                            source={{ uri: 'http://98.70.77.148:5999/video_feed' }}
                             style={styles.webview}
                             allowsFullscreenVideo={false}
                             scrollEnabled={false}
@@ -604,20 +610,6 @@ const HomeScreenSurveillance: React.FC = () => {
                                     <Text style={styles.valueText}>{sliderValue.toFixed(0)}°</Text>
                                 </View>
                             </View>
-                            {/* <Slider
-                                style={styles.slider}
-                                minimumValue={0}
-                                maximumValue={180}
-                                step={1}
-                                value={sliderValue}
-                                onValueChange={handleSliderChange}
-                                minimumTrackTintColor="#4CAF50"
-                                maximumTrackTintColor="#E0E0E0"
-                                thumbTintColor="#4CAF50"
-                                thumbStyle={styles.thumb}
-                                trackStyle={styles.track}
-                            /> */}
-
                             <Slider
                                 style={styles.slider}
                                 minimumValue={0}
@@ -679,12 +671,7 @@ const styles = StyleSheet.create({
         flex: 3,
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
-       
-        // shadowOffset: { width: 0, height: 4 },
-        // shadowOpacity: 0.05,
-        // shadowRadius: 8,
         elevation: 2,
-        // overflow: 'hidden',
     },
     webview: {
         flex: 1,
@@ -706,11 +693,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         padding: 16,
-        // shadowColor: '#000',
-        // shadowOffset: { width: 0, height: 4 },
-        // shadowOpacity: 0.05,
-        // shadowRadius: 8,
-        // elevation: 2,
         gap: 24,
     },
     controlGroup: {
@@ -784,4 +766,138 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreenSurveillance;
+
+//real code ends 
+
+
+
+
+
+// import React, { useState, useEffect, useRef } from 'react';
+// import { View, Text, StyleSheet, SafeAreaView, Dimensions } from 'react-native';
+// import { WebView } from 'react-native-webview';
+// import Canvas, { CanvasRenderingContext2D } from 'react-native-canvas';
+// import * as tf from '@tensorflow/tfjs-react-native';
+// import * as blazeface from '@tensorflow-models/blazeface';
+
+// const { width, height } = Dimensions.get('window');
+
+// const HomeSurveillance = () => {
+//     const [faces, setFaces] = useState<any[]>([]);
+//     const canvasRef = useRef<Canvas | null>(null);
+//     const modelRef = useRef<any>(null);
+
+//     useEffect(() => {
+//         (async () => {
+//             await tf.ready();
+//             modelRef.current = await blazeface.load();
+//             console.log("✅ BlazeFace model loaded");
+//         })();
+//     }, []);
+
+//     const handleFaceDetection = async (base64Image: string) => {
+//         try {
+//             if (!base64Image.startsWith('data:image')) return;
+//             console.log("📸 Captured Frame Received");
+
+//             if (!modelRef.current) {
+//                 console.warn("⚠️ BlazeFace model not loaded yet!");
+//                 return;
+//             }
+
+//             const image = new Image();
+//             image.src = base64Image;
+//             image.onload = async () => {
+//                 const tensor = tf.browser.fromPixels(image).resizeNearestNeighbor([128, 128]).toFloat().expandDims(0);
+//                 const predictions = await modelRef.current.estimateFaces(tensor);
+
+//                 console.log("🔍 Face Predictions:", predictions);
+//                 setFaces(predictions);
+//                 drawFaceBoxes(predictions);
+//             };
+//         } catch (error) {
+//             console.error('❌ Face detection error:', error);
+//         }
+//     };
+
+//     const drawFaceBoxes = async (faces: any[]) => {
+//         if (!canvasRef.current) return;
+        
+//         const canvas = canvasRef.current;
+//         const ctx = (await canvas.getContext('2d')) as CanvasRenderingContext2D;
+//         ctx.clearRect(0, 0, canvas.width, canvas.height);
+//         ctx.strokeStyle = 'red';
+//         ctx.lineWidth = 2;
+
+//         faces.forEach((face) => {
+//             const [x, y, width, height] = face.topLeft.concat(face.bottomRight);
+//             console.log(`🟥 Drawing box at: X=${x}, Y=${y}, W=${width - x}, H=${height - y}`);
+//             ctx.strokeRect(x, y, width - x, height - y);
+//         });
+//     };
+
+//     return (
+//         <SafeAreaView style={styles.container}>
+//             <View style={styles.cameraContainer}>
+//                 <WebView
+//                     source={{ uri: 'http://192.168.0.101:81/stream' }}
+//                     style={styles.webview}
+//                     injectedJavaScript={`
+//                         setInterval(() => {
+//                             const video = document.querySelector('video');
+//                             if (video) {
+//                                 const canvas = document.createElement('canvas');
+//                                 canvas.width = video.videoWidth;
+//                                 canvas.height = video.videoHeight;
+//                                 const ctx = canvas.getContext('2d');
+//                                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+//                                 window.ReactNativeWebView.postMessage(canvas.toDataURL('image/jpeg'));
+//                             }
+//                         }, 500);
+//                     `}
+//                     onMessage={(event) => handleFaceDetection(event.nativeEvent.data)}
+//                     allowsFullscreenVideo={false}
+//                     scrollEnabled={false}
+//                 />
+//                 {/* Transparent Canvas Overlay */}
+//                 <Canvas ref={canvasRef} style={styles.canvas} />
+//             </View>
+//             <Text style={styles.statusText}>
+//                 {faces.length > 0 ? `Faces detected: ${faces.length}` : 'No faces detected'}
+//             </Text>
+//         </SafeAreaView>
+//     );
+// };
+
+// const styles = StyleSheet.create({
+//     container: {
+//         flex: 1,
+//         backgroundColor: '#F5F5F5',
+//         alignItems: 'center',
+//         justifyContent: 'center',
+//     },
+//     cameraContainer: {
+//         position: 'relative',
+//         width: width - 32,
+//         height: 300,
+//         backgroundColor: '#000',
+//     },
+//     webview: {
+//         flex: 1,
+//     },
+//     canvas: {
+//         position: 'absolute',
+//         top: 0,
+//         left: 0,
+//         right: 0,
+//         bottom: 0,
+//     },
+//     statusText: {
+//         marginTop: 16,
+//         fontSize: 16,
+//         color: '#424242',
+//     },
+// });
+
+// export default HomeSurveillance;
 

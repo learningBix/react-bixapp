@@ -27,6 +27,32 @@ const categoryIcons = [
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
+    const handleNavigation = (category: string) => {
+        switch (category) {
+            case "Structure":
+                navigation.navigate('StructureScreen');
+                break;
+            case "Automation":
+                navigation.navigate('AutomationScreen');
+                break;
+            case "Output":
+                navigation.navigate('OutputScreen');
+                break;
+            case "Robotic car":
+                navigation.navigate('Roboticsscreen');
+                break;
+            case "Input":
+                navigation.navigate('InputHiveStatus');
+                break;
+            case "Sensor":
+                navigation.navigate('SensorHiveStatus');
+                break;
+            default:
+                console.log("No screen assigned for this category");
+                break;
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView
@@ -37,7 +63,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 {categories.map((item, index) => (
                     <Animated.View key={index} style={[styles.box, { transform: [{ scale: scaleAnim }] }]}>
                         <TouchableOpacity
-                            onPress={() => item === "Structure" ? navigation.navigate('StructureScreen') : null}
+                            onPress={() => handleNavigation(item)}
                             style={styles.touchable}
                         >
                             <Icon name={categoryIcons[index]} size={40} color="black" style={styles.icon} />
@@ -51,44 +77,44 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: 'white', 
-        padding: 20, 
-        justifyContent: 'center',  // Centers vertically
-        alignItems: 'center'  // Centers horizontally
+    container: {
+        flex: 1,
+        backgroundColor: 'white',
+        padding: 20,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
-    scrollView: { 
-        flexDirection: 'row', 
-        paddingVertical: 40,  // Increased vertical padding for space 
+    scrollView: {
+        flexDirection: 'row',
+        paddingVertical: 40,
     },
-    box: { 
-        width: 250,  // Increased box size
-        height: 250,  // Increased box size
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        marginHorizontal: 20,  // Increased horizontal margin for more space between boxes
-        marginBottom: 30,  // Added space between rows of boxes
-        borderRadius: 30, 
-        backgroundColor: '#a5d6a7',  // Darker shade of #e8f5e9
+    box: {
+        width: 250,
+        height: 250,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginHorizontal: 20,
+        marginBottom: 30,
+        borderRadius: 30,
+        backgroundColor: '#a5d6a7',
     },
-    boxText: { 
-        fontSize: 28, 
-        fontWeight: 'bold', 
-        color: 'black', 
-        textAlign: 'center', 
-        paddingHorizontal: 10,  // Added padding for better spacing of text
+    boxText: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: 'black',
+        textAlign: 'center',
+        paddingHorizontal: 10,
     },
-    icon: { 
-        marginBottom: 15, 
-        fontSize: 50, 
-        color: 'black' 
+    icon: {
+        marginBottom: 15,
+        fontSize: 50,
+        color: 'black'
     },
-    touchable: { 
-        flexDirection: 'column', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        paddingVertical: 30 
+    touchable: {
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 30
     },
 });
 

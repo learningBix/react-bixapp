@@ -31,10 +31,15 @@ const StructureScreen: React.FC<StructureScreenProps> = ({ navigation }) => {
       navigation.navigate('HomeScreenSurveillance');
     } else if (item === "Hall sensor security cam") {
       navigation.navigate('HallSensorScreen');
-    } else if (item === "IOT cam") { // Ensure this matches the category in the array
-      navigation.navigate("DevicesIotScreen"); // Correctly reference the screen name
+    } else if (item === "IOT cam") { 
+      navigation.navigate("DevicesIotScreen"); 
+    }else if (item === "Electric Cycle speedometer"){
+      navigation.navigate("Dashboard");
+    }else if(item === "AI Based Petfeeder"){
+      navigation.navigate("petfeeder");
+    }else if(item === "Portable AI-based safe box"){
+      navigation.navigate("safebox")
     }
-    // Add additional navigation logic if needed
   };
 
   return (
@@ -68,9 +73,6 @@ const StructureScreen: React.FC<StructureScreenProps> = ({ navigation }) => {
   );
 };
 
-
-
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -80,40 +82,208 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   scrollView: {
-    flexDirection: 'row',  // Ensure horizontal scrolling
+    flexDirection: 'row',  
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
   },
   gridContainer: {
-    flexDirection: 'row',  // Arrange items in a row
-    flexWrap: 'wrap',      // Allow items to wrap into a new row
-    justifyContent: 'flex-start', // Align items to the start
+    flexDirection: 'row', 
+    flexWrap: 'wrap',     
+    justifyContent: 'flex-start', 
     width: '100%',
   },
   box: {
-    width: 180,   // Adjust width for bigger boxes
-    height: 240,  // Adjust height for bigger boxes
+    width: 180,   
+    height: 240,  
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 20,  // Space between items horizontally
-    marginVertical: 20,    // Space between rows
+    marginHorizontal: 20,  
+    marginVertical: 20,    
     borderRadius: 12,
-    backgroundColor: '#A5D6A7',  // Light green background
+    backgroundColor: '#A5D6A7',  
     borderWidth: 3,
-    borderColor: '#FFFFFF',  // White border
+    borderColor: '#FFFFFF',   
   },
   boxText: {
-    fontSize: 18,  // Adjust font size for readability
+    fontSize: 18,  
     fontWeight: 'bold',
     color: '#000000',
     textAlign: 'center',
   },
   icon: {
     marginBottom: 12,
-    color: '#000000',  // Ensure icon color is black
+    color: '#000000',  
     fontSize: 40,
   },
 });
 
 export default StructureScreen;
+
+
+
+
+// import React from 'react';
+// import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+// import Icon from 'react-native-vector-icons/FontAwesome';
+
+// interface StructureScreenProps {
+//   navigation: any;
+// }
+
+// const structureCategoryIcons = [
+//   "home",
+//   "eye",
+//   "bolt",
+//   "bicycle",
+//   "bell",
+//   "cube",
+//   "shield"
+// ];
+
+// const structureCategories = [
+//   "Home",
+//   "Surveillance",
+//   "Electric",
+//   "Cycle Speed",
+//   "Hall",
+//   "LOT",
+//   "Security"
+// ];
+
+// const StructureScreen: React.FC<StructureScreenProps> = ({ navigation }) => {
+//   const handleNavigation = (item: string) => {
+//     const routes: Record<string, string> = {
+//       "Home": "HomeScreenSurveillance",
+//       "Surveillance": "HallSensorScreen",
+//       "Electric": "Dashboard",
+//       "Cycle Speed": "Dashboard",
+//       "Hall": "HallSensorScreen",
+//       "LOT": "DevicesIotScreen",
+//       "Security": "safebox"
+//     };
+//     if (routes[item]) navigation.navigate(routes[item]);
+//   };
+
+//   return (
+//     <SafeAreaView style={styles.container}>
+//       <View style={styles.honeycomb}>
+//         {structureCategories.map((item, index) => (
+//           <TouchableOpacity
+//             key={index}
+//             style={[styles.hexagonContainer, index >= 4 && styles.secondRow]}
+//             onPress={() => handleNavigation(item)}
+//           >
+//             <View style={styles.hexagon}>
+//               <View style={styles.hexagonInner}>
+//                 <Icon 
+//                   name={structureCategoryIcons[index]} 
+//                   size={40} 
+//                   color="#FFF" 
+//                   style={styles.icon} 
+//                 />
+//                 <Text style={styles.boxText}>{item}</Text>
+//               </View>
+//               <View style={styles.hexagonBefore} />
+//               <View style={styles.hexagonAfter} />
+//             </View>
+//           </TouchableOpacity>
+//         ))}
+//       </View>
+//     </SafeAreaView>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     backgroundColor: '#87CEEB',
+//     padding: 20,
+//   },
+//   honeycomb: {
+//     flexDirection: 'row',
+//     flexWrap: 'wrap',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     width: '100%',
+//     paddingTop: 40,
+//   },
+//   hexagonContainer: {
+//     margin: 8,
+//     width: 100,
+//   },
+//   secondRow: {
+//     marginTop: -30,
+//   },
+//   hexagon: {
+//     width: 100,
+//     height: 115,
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//   },
+//   hexagonInner: {
+//     width: 100,
+//     height: 58,
+//     backgroundColor: '#FF6B6B',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//     borderRadius: 12,
+//     elevation: 8,
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: 4 },
+//     shadowOpacity: 0.3,
+//     shadowRadius: 6,
+//   },
+//   hexagonBefore: {
+//     position: 'absolute',
+//     top: -29,
+//     width: 0,
+//     height: 0,
+//     borderLeftWidth: 50,
+//     borderRightWidth: 50,
+//     borderBottomWidth: 29,
+//     borderStyle: 'solid',
+//     borderLeftColor: 'transparent',
+//     borderRightColor: 'transparent',
+//     borderBottomColor: '#FF6B6B',
+//   },
+//   hexagonAfter: {
+//     position: 'absolute',
+//     bottom: -29,
+//     width: 0,
+//     height: 0,
+//     borderLeftWidth: 50,
+//     borderRightWidth: 50,
+//     borderTopWidth: 29,
+//     borderStyle: 'solid',
+//     borderLeftColor: 'transparent',
+//     borderRightColor: 'transparent',
+//     borderTopColor: '#FF6B6B',
+//   },
+//   boxText: {
+//     fontSize: 18,
+//     fontWeight: 'bold',
+//     color: '#FFF',
+//     textAlign: 'center',
+//     marginTop: 5,
+//     textShadowColor: 'rgba(0,0,0,0.2)',
+//     textShadowOffset: { width: 1, height: 1 },
+//     textShadowRadius: 2,
+//   },
+//   icon: {
+//     marginBottom: 5,
+//     textShadowColor: 'rgba(0,0,0,0.2)',
+//     textShadowOffset: { width: 1, height: 1 },
+//     textShadowRadius: 2,
+//   },
+// });
+
+// export default StructureScreen;
+
+
+
+
+
+

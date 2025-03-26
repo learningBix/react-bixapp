@@ -1,13 +1,42 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-
 import HomeScreen from './src/screens/homescreen/homescreen';
 import HallSensorScreen from './src/screens/hallsensor/hallsensor';
 import StructureScreen from './src/screens/structure/structurescreen';
 import HomeScreenSurveillance from './src/screens/homesurvillance/homesurvillence'; 
 import DevicesIotScreen from './src/screens/iotdevices/iot';
+import Dashboard from './src/screens/electriccycle/electriccycle';
+import petfeeder from './src/screens/ai_pet_feeder/ai_pet_feeder';
 import { MD3LightTheme as DefaultTheme, PaperProvider } from 'react-native-paper';
+import safebox from './src/screens/ai_based_safe_box/ai_based_safe_box';
+import AutomationScreen from './src/screens/automation/automation';
+import NightLamp from './src/screens/automation/night_lamp';
+import MorningAlarm from './src/screens/automation/morning_alarm';
+import SmartIrrigation from './src/screens/automation/smart_irrigation';
+import DoorAlarm from './src/screens/automation/door_alarm';
+import WaterOverflowIndication from './src/screens/automation/water_overflow';
+import PetFeeder from './src/screens/automation/pet_feeder';
+import PersonCounter from './src/screens/automation/person_counter';
+import HomeSecurity from './src/screens/automation/home_security_system';
+import LiquedDispenser from './src/screens/automation/liqued_dispenser';
+import IndoorPlant from './src/screens/automation/indoor_plant_monitor';
+import WirelessDoorLock from './src/screens/automation/wireless_door_lock';
+import OutputScreen from './src/screens/output/output';
+import LEDControl from './src/screens/output/leb_rgb';
+import VibrationMotor from './src/screens/output/vibration_motor';
+import Buzzer from './src/screens/output/buzzer';
+import Music from './src/screens/output/music';
+import FanControl from './src/screens/output/fan_control';
+import ServoControl from './src/screens/output/servo_motor';
+import MotorControl from './src/screens/output/motor_control';
+import OLEDDisplay from './src/screens/output/oled_output';
+import RoboticsScreen from './src/screens/robotic_car/robotics_activity';
+import RoboticCarController from './src/screens/robotic_car/robotics_car';
+import obstacleCarController from './src/screens/robotic_car/obstacleavoidance';
+import InputHiveStatus from './src/screens/input/input';
+import SensorHiveStatus from './src/screens/sensor/sensor';
+
 
 const theme = {
   ...DefaultTheme,
@@ -34,9 +63,38 @@ const App: React.FC = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="StructureScreen" component={StructureScreen} />
+          <Stack.Screen name="AutomationScreen" component={AutomationScreen} />
+          <Stack.Screen name="Roboticsscreen" component={RoboticsScreen} />
+          <Stack.Screen name="InputHiveStatus" component={InputHiveStatus} /> 
+          <Stack.Screen name="SensorHiveStatus" component={SensorHiveStatus} /> 
+          <Stack.Screen name="robocar" component={RoboticCarController} /> 
+          <Stack.Screen name="obstacleavoid" component={obstacleCarController} /> 
+          <Stack.Screen name="OutputScreen" component={OutputScreen} /> 
+          <Stack.Screen name="OLEDBlockScreen" component={OLEDDisplay} /> 
+          <Stack.Screen name="RGBLEDScreen" component={LEDControl} /> 
+          <Stack.Screen name="VibrationMotorScreen" component={VibrationMotor}/> 
+          <Stack.Screen name="BuzzerScreen" component={Buzzer} /> 
+          <Stack.Screen name="MusicScreen" component={Music} /> 
+          <Stack.Screen name="FanBlockScreen" component={FanControl}/>
+          <Stack.Screen name="MotorDriverScreen" component={MotorControl}/>
+          <Stack.Screen name="ServoMotorWiFiScreen" component={ServoControl}/>
+          <Stack.Screen name="NightLamp" component={NightLamp}/>
+          <Stack.Screen name="MorningAlarmScreen" component={MorningAlarm} />
+          <Stack.Screen name="SmartIrrigationScreen" component={SmartIrrigation} />
+          <Stack.Screen name="DoorAlarmScreen" component={DoorAlarm} />
+          <Stack.Screen name="WaterOverflowScreen" component={WaterOverflowIndication} />
+          <Stack.Screen name="PetFeederScreen" component={PetFeeder} />
+          <Stack.Screen name="PersonCounterScreen" component={PersonCounter}/>
+          <Stack.Screen name="HomeSecurityScreen" component={HomeSecurity}/>
+          <Stack.Screen name="LiquidDispenserScreen" component={LiquedDispenser}/>
+          <Stack.Screen name="PlantMonitorScreen" component={IndoorPlant} />
+          <Stack.Screen name="DoorLockScreen" component={WirelessDoorLock} />
           <Stack.Screen name="HomeScreenSurveillance" component={HomeScreenSurveillance} />
           <Stack.Screen name="HallSensorScreen" component={HallSensorScreen} options={{ title: 'Hall Sensor' }}/>
           <Stack.Screen name="DevicesIotScreen" component={DevicesIotScreen} options={{ title: 'IoT Camera' }}/>
+          <Stack.Screen name="Dashboard" component={Dashboard} options={{ title: 'dashboard' }}/>
+          <Stack.Screen name="petfeeder" component={petfeeder} options={{ title: 'petfeeder' }}/>
+          <Stack.Screen name="safebox" component={safebox} options={{ title: 'safebox' }}/>
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
@@ -44,3 +102,5 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
