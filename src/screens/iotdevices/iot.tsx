@@ -1,481 +1,53 @@
-// import React, { useState, useEffect, useRef } from 'react';
-// import { View, ScrollView, Image, StyleSheet, TouchableOpacity } from 'react-native';
-// import dgram from 'react-native-udp';
-// import { Buffer } from 'buffer';
-// import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// import { Button, Card, Text, ActivityIndicator, useTheme, Modal, Portal } from 'react-native-paper';
-// import { SafeAreaView } from 'react-native-safe-area-context';
-// import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
-// const UDP_PORT = 8888;
-// const ESP32_IP = '192.168.0.101';
-
-// const DevicesIotScreen: React.FC = () => {
-//     const theme = useTheme();
-//     const insets = useSafeAreaInsets();
-//     const [isOn, setIsOn] = useState(false);
-//     const [imageData, setImageData] = useState<string | null>(null);
-//     const [base64Text, setBase64Text] = useState<string>('');
-//     const lastSentTime = useRef<number>(0);
-//     const socketRef = useRef<dgram.Socket | null>(null);
-//     const [receivedChunks, setReceivedChunks] = useState<{ [key: number]: string }>({});
-//     const [totalChunks, setTotalChunks] = useState<number>(0);
-//     const [isLoading, setIsLoading] = useState(false);
-//     const [imageClicked, setImageClicked] = useState(false);
-//     const [showSummaryModal, setShowSummaryModal] = useState(false);
-
-//     const dummyResponse = `I can see that this image shows a modern living room with a contemporary design aesthetic. Here's what I observe:
-
-// 1. Furniture: There's a large L-shaped gray sectional sofa that serves as the focal point of the room. A sleek wooden coffee table with interesting geometric patterns sits in front of it.
-
-// 2. Natural Elements: Two tall potted plants are strategically placed near a floor-to-ceiling window, bringing nature indoors and adding life to the space.
-
-// 3. Lighting: The room features recessed ceiling lights and a modern floor lamp, creating layers of ambient lighting that enhance the atmosphere.
-
-// 4. Color Scheme: The space follows a neutral color palette with:
-//    • Warm earth tones in the wall art
-//    • Soft grays in the upholstery
-//    • Rich brown tones in the hardwood flooring
-
-// 5. Textural Elements: A plush white area rug adds softness and contrasts beautifully with the dark hardwood floors.
-
-// Would you like me to provide more specific details about any particular aspect of the room?`;
-
-//     useEffect(() => {
-//         const socket = dgram.createSocket('udp4');
-//         socketRef.current = socket;
-
-//         socket.on('message', (msg) => {
-//             const message = msg.toString();
-//             const firstComma = message.indexOf(',');
-//             const secondComma = message.indexOf(',', firstComma + 1);
-
-//             if (firstComma === -1 || secondComma === -1) return;
-
-//             const seqStr = message.substring(0, firstComma);
-//             const totalStr = message.substring(firstComma + 1, secondComma);
-//             const data = message.substring(secondComma + 1);
-
-//             const seq = parseInt(seqStr, 10);
-//             const total = parseInt(totalStr, 10);
-
-//             setReceivedChunks((prev) => ({ ...prev, [seq]: data }));
-//             setTotalChunks(total);
-//         });
-
-//         socket.on('error', (err) => {
-//             console.error('UDP Socket Error:', err);
-//             socket.close();
-//         });
-
-//         socket.bind(UDP_PORT);
-
-//         return () => {
-//             socket.close();
-//         };
-//     }, []);
-
-//     useEffect(() => {
-//         if (Object.keys(receivedChunks).length === totalChunks && totalChunks > 0) {
-//             const fullData = Array.from({ length: totalChunks }, (_, i) => receivedChunks[i] || '').join('');
-//             setBase64Text(fullData);
-//             setImageData(`data:image/jpeg;base64,${fullData}`);
-//             setReceivedChunks({});
-//             setTotalChunks(0);
-//         }
-//     }, [receivedChunks, totalChunks]);
-
-//     const sendServoCommand = (commandByte: number) => {
-//         const now = Date.now();
-//         if (now - lastSentTime.current < 50) return;
-//         lastSentTime.current = now;
-
-//         const client = dgram.createSocket('udp4');
-//         client.bind(0, () => {
-//             const message = Buffer.from([commandByte]);
-//             client.send(message, 0, message.length, UDP_PORT, ESP32_IP, (error) => {
-//                 if (error) console.error('UDP Send Error:', error);
-//                 client.close();
-//             });
-//         });
-//     };
-
-//     const handleImageClick = () => {
-//         setImageClicked(!imageClicked);
-//     };
-
-//     return (
-//         <SafeAreaView style={styles.safeArea}>
-//             <View style={[styles.container, { paddingTop: insets.top }]}>
-//                 <Card style={styles.card}>
-//                     <View style={styles.twoPaneLayout}>
-//                         <Card style={styles.controlsPanel}>
-//                             <Card.Content>
-//                                 <Text variant="titleLarge" style={styles.panelTitle}>
-//                                     <Icon name="devices" size={18} color="#424242" style={{ marginRight: 10 }} />
-//                                     Device Controls
-//                                 </Text>
-//                                 <View style={styles.controls}>
-//                                     <Button
-//                                         mode="contained"
-//                                         onPress={() => { sendServoCommand(0xC1); setIsOn(true); }}
-//                                         disabled={isOn}
-//                                         style={[
-//                                             styles.button,
-//                                             isOn ? styles.buttonDisabled : styles.buttonActive,
-//                                         ]}
-//                                     >
-//                                         <Icon
-//                                             name="power"
-//                                             size={20}
-//                                             color={isOn ? '#757575' : 'black'}
-//                                             style={styles.iconStyle}
-//                                         />
-//                                         <Text style={[styles.buttonText, { color: isOn ? '#757575' : 'black' }]}>
-//                                             Activate Sensor
-//                                         </Text>
-//                                     </Button>
-//                                     <Button
-//                                         mode="contained-tonal"
-//                                         onPress={() => { sendServoCommand(0xC0); setIsOn(false); }}
-//                                         disabled={!isOn}
-//                                         style={[
-//                                             styles.button,
-//                                             !isOn ? styles.buttonDisabled : styles.buttonActive,
-//                                         ]}
-//                                     >
-//                                         <Icon
-//                                             name="power-off"
-//                                             size={20}
-//                                             color={!isOn ? '#757575' : 'black'}
-//                                             style={styles.iconStyle}
-//                                         />
-//                                         <Text style={[styles.buttonText, { color: !isOn ? '#757575' : 'black' }]}>
-//                                             Deactivate Sensor
-//                                         </Text>
-//                                     </Button>
-//                                     <Button
-//                                         mode="contained-tonal"
-//                                         onPress={() => setShowSummaryModal(true)}
-//                                         disabled={!imageData}
-//                                         style={[
-//                                             styles.button,
-//                                             styles.summaryButton,
-//                                             !imageData && styles.buttonDisabled
-//                                         ]}
-//                                     >
-//                                         <Icon
-//                                             name="text-box-outline"
-//                                             size={20}
-//                                             color={!imageData ? '#757575' : '#2E7D32'}
-//                                             style={styles.iconStyle}
-//                                         />
-//                                         <Text style={[styles.buttonText, { 
-//                                             color: !imageData ? '#757575' : '#2E7D32' 
-//                                         }]}>
-//                                             Summarize Image
-//                                         </Text>
-//                                     </Button>
-//                                 </View>
-//                             </Card.Content>
-//                         </Card>
-//                         <Card style={styles.imagePreview}>
-//                             <Card.Content>
-//                                 <Text variant="titleLarge" style={styles.panelTitle}>
-//                                     <Icon name="image" size={15} color="#424242" style={{ marginRight: 8 }} />
-//                                     Captured Image
-//                                 </Text>
-//                                 <View style={styles.imageContainer}>
-//                                     {isLoading ? (
-//                                         <ActivityIndicator animating={true} size="large" color={theme.colors.primary} />
-//                                     ) : imageClicked && imageData ? (
-//                                         <TouchableOpacity onPress={handleImageClick}>
-//                                             <Image source={{ uri: imageData }} style={styles.imageFull} />
-//                                         </TouchableOpacity>
-//                                     ) : imageData ? (
-//                                         <TouchableOpacity onPress={handleImageClick}>
-//                                             <Image source={{ uri: imageData }} style={styles.image} />
-//                                         </TouchableOpacity>
-//                                     ) : (
-//                                         <View style={styles.waitingContainer}>
-//                                             <Icon name="image-off" size={40} color="#777" style={{ marginBottom: 8 }} />
-//                                             <Text variant="bodyMedium" style={styles.waitingText}>
-//                                                 Waiting for image data...
-//                                             </Text>
-//                                         </View>
-//                                     )}
-//                                 </View>
-//                             </Card.Content>
-//                         </Card>
-//                     </View>
-//                     <Card style={styles.dataOutput}>
-//                         <Card.Content>
-//                             <Text variant="titleMedium" style={styles.dataTitle}>
-//                                 <Icon
-//                                     name="code-braces"
-//                                     size={24}
-//                                     color="#2E7D32"
-//                                     style={{ marginRight: 8, marginBottom: 8, textAlign: 'center' }}
-//                                 />
-//                                 Base64 Data Stream
-//                             </Text>
-//                             <ScrollView style={styles.base64Scroll}>
-//                                 <Text variant="bodySmall" style={styles.base64Text}>
-//                                     {base64Text}
-//                                 </Text>
-//                             </ScrollView>
-//                         </Card.Content>
-//                     </Card>
-//                 </Card>
-
-//                 <Portal>
-//                     <Modal
-//                         visible={showSummaryModal}
-//                         onDismiss={() => setShowSummaryModal(false)}
-//                         contentContainerStyle={styles.modalContainer}
-//                     >
-//                         <Card style={styles.summaryCard}>
-//                             <Card.Title
-//                                 title="Image Analysis"
-//                                 titleStyle={styles.modalTitle}
-//                                 left={(props) => (
-//                                     <View style={styles.avatarContainer}>
-//                                         <Icon name="robot" size={24} color="#19C37D" />
-//                                     </View>
-//                                 )}
-//                                 right={(props) => (
-//                                     <TouchableOpacity 
-//                                         onPress={() => setShowSummaryModal(false)}
-//                                         style={styles.closeButton}
-//                                     >
-//                                         <Icon name="close" size={24} color="#666" />
-//                                     </TouchableOpacity>
-//                                 )}
-//                             />
-//                             <Card.Content>
-//                                 <ScrollView 
-//                                     style={styles.summaryScroll}
-//                                     showsVerticalScrollIndicator={false}
-//                                 >
-//                                     <View style={styles.chatBubble}>
-//                                         <Text style={styles.summaryText}>
-//                                             {dummyResponse}
-//                                         </Text>
-//                                     </View>
-//                                 </ScrollView>
-//                             </Card.Content>
-//                         </Card>
-//                     </Modal>
-//                 </Portal>
-//             </View>
-//         </SafeAreaView>
-//     );
-// };
-// // [Previous code remains exactly the same until the styles]
-
-// const styles = StyleSheet.create({
-//     safeArea: {
-//         flex: 1,
-//     },
-//     container: {
-//         flex: 1,
-//         paddingHorizontal: 16,
-//     },
-//     card: {
-//         marginVertical: 16,
-//         borderRadius: 12,
-//         borderWidth: 1,
-//         borderColor: '#EEEEEE',
-//         elevation: 0,
-//     },
-//     panelTitle: {
-//         textAlign: 'center',
-//         marginBottom: 16,
-//         fontSize: 14,
-//         fontWeight: '500',
-//         color: '#424242',
-//         alignItems: "center"
-//     },
-//     twoPaneLayout: {
-//         flexDirection: 'row',
-//         gap: 16,
-//     },
-//     controlsPanel: {
-//         borderWidth: 1,
-//         borderColor: '#EEEEEE',
-//         borderRadius: 12,
-//         backgroundColor: '#FFFFFF',
-//         padding: 16,
-//         elevation: 0,
-//         flex: 1,
-//     },
-//     controls: {
-//         gap: 12,
-//     },
-//     button: {
-//         borderRadius: 8,
-//         flexDirection: 'row',
-//         alignItems: 'center',
-//         justifyContent: 'center',
-//         paddingVertical: 12,
-//     },
-//     buttonActive: {
-//         backgroundColor: '#c8e6c9',
-//     },
-//     buttonDisabled: {
-//         backgroundColor: '#e8f5e9',
-//     },
-//     summaryButton: {
-//         backgroundColor: '#E8F5E9',
-//         borderColor: '#C8E6C9',
-//         borderWidth: 1,
-//     },
-//     buttonText: {
-//         fontSize: 14,
-//         fontWeight: '600',
-//     },
-//     imagePreview: {
-//         flex: 2,
-//         borderWidth: 1,
-//         borderColor: '#EEEEEE',
-//         borderRadius: 12,
-//         backgroundColor: '#FFFFFF',
-//     },
-//     imageContainer: {
-//         justifyContent: 'center',
-//         alignItems: 'center',
-//         minHeight: 250,
-//         backgroundColor: '#FFFFFF',
-//         borderRadius: 12,
-//     },
-//     image: {
-//         width: '100%',
-//         height: 250,
-//         borderWidth: 1,
-//         borderColor: '#EEEEEE',
-//         borderRadius: 12,
-//         elevation: 0,
-//     },
-//     imageFull: {
-//         width: '100%',
-//         height: '100%',
-//         borderRadius: 12,
-//     },
-//     waitingContainer: {
-//         alignItems: 'center',
-//     },
-//     waitingText: {
-//         fontStyle: 'italic',
-//         color: '#616161',
-//         textAlign: 'center',
-//     },
-//     dataOutput: {
-//         marginTop: 16,
-//         padding: 12,
-//         backgroundColor: '#E8F5E9',
-//         borderRadius: 12,
-//     },
-//     dataTitle: {
-//         marginBottom: 8,
-//         fontSize: 14,
-//         fontWeight: '500',
-//         color: '#2E7D32',
-//     },
-//     base64Scroll: {
-//         maxHeight: 150,
-//         backgroundColor: '#EEEEEE',
-//         padding: 8,
-//         borderRadius: 8,
-//     },
-//     base64Text: {
-//         fontFamily: 'monospace',
-//         color: '#555555',
-//     },
-//     iconStyle: {
-//         marginRight: 8,
-//     },
-//     modalContainer: {
-//         paddingHorizontal: 16,
-//         paddingTop: 60,
-//         paddingBottom: 40,
-//         margin: 20,
-//     },
-//     summaryCard: {
-//         backgroundColor: '#FFFFFF',
-//         borderRadius: 16,
-//         maxHeight: '80%',
-//         elevation: 4,
-//     },
-//     modalTitle: {
-//         color: '#333333',
-//         fontSize: 18,
-//         fontWeight: '600',
-//     },
-//     avatarContainer: {
-//         backgroundColor: '#E8F5E9',
-//         borderRadius: 20,
-//         padding: 8,
-//         marginRight: 8,
-//     },
-//     closeButton: {
-//         padding: 8,
-//     },
-//     summaryScroll: {
-//         maxHeight: 400,
-//         paddingHorizontal: 8,
-//     },
-//     chatBubble: {
-//         backgroundColor: '#F7F7F8',
-//         borderRadius: 12,
-//         padding: 16,
-//         marginVertical: 8,
-//     },
-//     summaryText: {
-//         color: '#353740',
-//         lineHeight: 24,
-//         fontSize: 15,
-//         letterSpacing: 0.3,
-//     },
-// });
-
-// export default DevicesIotScreen;
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
-import { View,ScrollView,Image,StyleSheet,TouchableOpacity,PermissionsAndroid,Platform,ActivityIndicator } from 'react-native';
+import { View, ScrollView, Image, StyleSheet, TouchableOpacity, PermissionsAndroid, Platform, ActivityIndicator } from 'react-native';
 import dgram from 'react-native-udp';
 import { Buffer } from 'buffer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, Card, Text, useTheme, Modal, Portal } from 'react-native-paper';
+import { Button, Text, useTheme, Modal, Portal, IconButton, Surface, Divider } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ImageCropPicker from 'react-native-image-crop-picker';
 
 const UDP_PORT = 8888;
-const ESP32_IP = '192.168.0.101';
+const ESP32_IP = 'esptest.local';
 
-const DevicesIotScreen: React.FC = () => {
+const DevicesIotScreen = () => {
     const theme = useTheme();
     const insets = useSafeAreaInsets();
+
     const [isOn, setIsOn] = useState(false);
-    const [imageData, setImageData] = useState<string | null>(null);
-    const [base64Text, setBase64Text] = useState<string>('');
-    const lastSentTime = useRef<number>(0);
-    const socketRef = useRef<dgram.Socket | null>(null);
-    const [receivedChunks, setReceivedChunks] = useState<{ [key: number]: string }>({});
-    const [totalChunks, setTotalChunks] = useState<number>(0);
+    const [imageData, setImageData] = useState(null);
+    const [base64Text, setBase64Text] = useState('');
+    const lastSentTime = useRef(0);
+    const socketRef = useRef(null);
+    const [receivedChunks, setReceivedChunks] = useState({});
+    const [totalChunks, setTotalChunks] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [imageClicked, setImageClicked] = useState(false);
     const [showSummaryModal, setShowSummaryModal] = useState(false);
-    const [analysisResult, setAnalysisResult] = useState<string>('');
+    const [analysisResult, setAnalysisResult] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState('disconnected');
 
+    // --- Colors that approximate the screenshot's pink/purple style ---
+    const designTheme = {
+        background: '#372659',      // Main background (deep purple)
+        cardLeftBg: '#F52C82',       // Left card (pink)
+        cardRightBg: '#4A2266',      // Right card (darker purple)
+        textHeading: '#FFFFFF',      // Heading text
+        textBody: '#FCE4F2',         // Body text
+        buttonActive: '#FF78B7',     // Button pink
+        buttonInactive: '#EAA2D6',   // Lighter pink
+    };
+
+    // --- Setup the UDP socket on mount ---
     useEffect(() => {
         const socket = dgram.createSocket('udp4');
         socketRef.current = socket;
+        setConnectionStatus('connecting');
 
         socket.on('message', (msg) => {
+            setConnectionStatus('connected');
             const message = msg.toString();
             const parts = message.split(',');
             if (parts.length < 3) return;
@@ -492,14 +64,26 @@ const DevicesIotScreen: React.FC = () => {
 
         socket.on('error', (err) => {
             console.error('UDP Error:', err);
+            setConnectionStatus('disconnected');
             socket.close();
         });
 
         socket.bind(UDP_PORT);
 
-        return () => socket.close();
+        // Simulate a connection check
+        const connectionTimer = setTimeout(() => {
+            if (connectionStatus === 'connecting') {
+                setConnectionStatus('connected');
+            }
+        }, 3000);
+
+        return () => {
+            clearTimeout(connectionTimer);
+            socket.close();
+        };
     }, []);
 
+    // --- Once all chunks arrive, build image and auto-analyze ---
     useEffect(() => {
         if (Object.keys(receivedChunks).length === totalChunks && totalChunks > 0) {
             const fullData = Array.from({ length: totalChunks }, (_, i) => receivedChunks[i] || '').join('');
@@ -507,24 +91,34 @@ const DevicesIotScreen: React.FC = () => {
             setImageData(`data:image/jpeg;base64,${fullData}`);
             setReceivedChunks({});
             setTotalChunks(0);
+            // Auto-analyze image when received
+            if (fullData) {
+                sendImageForAnalysis(`data:image/jpeg;base64,${fullData}`);
+            }
         }
     }, [receivedChunks, totalChunks]);
 
-    const sendServoCommand = (commandByte: number) => {
+    // --- Send servo command to device ---
+    const sendServoCommand = (commandByte) => {
         const now = Date.now();
         if (now - lastSentTime.current < 50) return;
         lastSentTime.current = now;
 
+        setIsLoading(true);
         const client = dgram.createSocket('udp4');
         client.bind(0, () => {
             const message = Buffer.from([commandByte]);
             client.send(message, 0, message.length, UDP_PORT, ESP32_IP, (error) => {
-                error && console.error('UDP Send Error:', error);
+                setIsLoading(false);
+                if (error) {
+                    console.error('UDP Send Error:', error);
+                }
                 client.close();
             });
         });
     };
 
+    // --- Pick an image from gallery for testing ---
     const handleImagePick = async () => {
         const requestPermission = async () => {
             if (Platform.OS === 'android') {
@@ -543,7 +137,7 @@ const DevicesIotScreen: React.FC = () => {
                     return false;
                 }
             }
-            return true; 
+            return true;
         };
 
         if (!(await requestPermission())) {
@@ -551,6 +145,7 @@ const DevicesIotScreen: React.FC = () => {
         }
 
         try {
+            setIsLoading(true);
             const image = await ImageCropPicker.openPicker({
                 width: 300,
                 height: 400,
@@ -561,16 +156,21 @@ const DevicesIotScreen: React.FC = () => {
 
             if (image?.data) {
                 const base64Image = `data:${image.mime};base64,${image.data}`;
+                setImageData(base64Image);
+                setBase64Text(image.data);
                 sendImageForAnalysis(base64Image);
             }
-        } catch (err: any) {
+            setIsLoading(false);
+        } catch (err) {
+            setIsLoading(false);
             if (err.message !== 'User cancelled image selection') {
                 console.error('Image picker error:', err);
             }
         }
     };
 
-    const sendImageForAnalysis = async (base64Image: string) => {
+    // --- Send image to backend for analysis ---
+    const sendImageForAnalysis = async (base64Image) => {
         setIsAnalyzing(true);
         try {
             const response = await fetch('http://98.70.77.148:8000/analyze-image', {
@@ -589,172 +189,161 @@ const DevicesIotScreen: React.FC = () => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={[styles.container, { paddingTop: insets.top }]}>
-                <Card style={styles.card}>
-                    <View style={styles.twoPaneLayout}>
-                        <Card style={styles.controlsPanel}>
-                            <Card.Content>
-                                <Text variant="titleLarge" style={styles.panelTitle}>
-                                    <Icon name="devices" size={18} color="#424242" />
-                                    Device Controls
-                                </Text>
-                                <View style={styles.controls}>
-                                    <Button
-                                        mode="contained"
-                                        onPress={() => { sendServoCommand(0xC1); setIsOn(true); }}
-                                        disabled={isOn}
-                                        style={[styles.button, isOn && styles.buttonDisabled]}
-                                    >
-                                        <Icon name="power" size={20} color={isOn ? '#757575' : 'black'} />
-                                        <Text style={[styles.buttonText, isOn && { color: '#757575' }]}>
-                                            Activate Sensor
-                                        </Text>
-                                    </Button>
-                                    <Button
-                                        mode="contained-tonal"
-                                        onPress={() => { sendServoCommand(0xC0); setIsOn(false); }}
-                                        disabled={!isOn}
-                                        style={[styles.button, !isOn && styles.buttonDisabled]}
-                                    >
-                                        <Icon name="power-off" size={20} color={!isOn ? '#757575' : 'black'} />
-                                        <Text style={[styles.buttonText, !isOn && { color: '#757575' }]}>
-                                            Deactivate Sensor
-                                        </Text>
-                                    </Button>
-                                    <Button
-                                        mode="contained-tonal"
-                                        onPress={() => setShowSummaryModal(true)}
-                                        style={[styles.button, styles.summaryButton]}
-                                    >
-                                        <Icon name="text-box-outline" size={20} color="#2E7D32" />
-                                        <Text style={[styles.buttonText, { color: '#2E7D32' }]}>
-                                            Summarize Image
-                                        </Text>
-                                    </Button>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: designTheme.background, paddingTop: insets.top }]}>
+            <View style={styles.container}>
+                <View style={styles.row}>
+                    {/* Left Card: "Captured Image" */}
+                    <Surface style={[styles.leftCard, { backgroundColor: designTheme.cardLeftBg }]}>
+            
+                        <View style={styles.imageArea}>
+                            {isLoading ? (
+                                <View style={styles.loadingContainer}>
+                                    <ActivityIndicator size="large" color="#fff" />
+                                    <Text style={{ color: '#fff', marginTop: 8 }}>Processing...</Text>
                                 </View>
-                            </Card.Content>
-                        </Card>
-
-                        <Card style={styles.imagePreview}>
-                            <Card.Content>
-                                <Text variant="titleLarge" style={styles.panelTitle}>
-                                    <Icon name="image" size={15} color="#424242" />
-                                    Captured Image
-                                </Text>
-                                <View style={styles.imageContainer}>
-                                    {isLoading ? (
-                                        <ActivityIndicator size="large" color={theme.colors.primary} />
-                                    ) : imageData ? (
-                                        <TouchableOpacity
-                                            onPress={() => setImageClicked(!imageClicked)}
-                                            activeOpacity={0.8}
-                                        >
-                                            <Image
-                                                source={{ uri: imageData }}
-                                                style={imageClicked ? styles.imageFull : styles.image}
-                                            />
-                                        </TouchableOpacity>
-                                    ) : (
-                                        <View style={styles.waitingContainer}>
-                                            <Icon name="image-off" size={40} color="#777" />
-                                            <Text variant="bodyMedium" style={styles.waitingText}>
-                                                Waiting for image data...
-                                            </Text>
-                                        </View>
+                            ) : imageData ? (
+                                <TouchableOpacity
+                                    onPress={() => setImageClicked(!imageClicked)}
+                                    style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+                                >
+                                    <Image
+                                        source={{ uri: imageData }}
+                                        style={imageClicked ? styles.fullImage : styles.previewImage}
+                                        resizeMode="contain"
+                                    />
+                                    {imageClicked && (
+                                        <IconButton
+                                            icon="close"
+                                            size={24}
+                                            style={styles.closeImageButton}
+                                            onPress={() => setImageClicked(false)}
+                                            color="#fff"
+                                        />
                                     )}
+                                </TouchableOpacity>
+                            ) : (
+                                <View style={styles.waitingContainer}>
+                                    <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold' }}>
+                                        Waiting for image data...
+                                    </Text>
                                 </View>
-                            </Card.Content>
-                        </Card>
-                    </View>
+                            )}
+                        </View>
+                    </Surface>
 
-                    <Card style={styles.dataOutput}>
-                        <Card.Content>
-                            <Text variant="titleMedium" style={styles.dataTitle}>
-                                <Icon name="code-braces" size={24} color="#2E7D32" />
-                                Base64 Data Stream
-                            </Text>
-                            <ScrollView style={styles.base64Scroll}>
-                                <Text variant="bodySmall" style={styles.base64Text}>
-                                    {base64Text}
-                                </Text>
-                            </ScrollView>
-                        </Card.Content>
-                    </Card>
-                </Card>
+                    {/* Right Card: "Device Control" */}
+                    <Surface style={[styles.rightCard, { backgroundColor: designTheme.cardRightBg }]}>
+                        <Text style={[styles.cardTitle, { color: designTheme.textHeading }]}>
+                            Device Control
+                        </Text>
+                        <View style={styles.centeredButtonGroup}>
+                            <Button
+                                mode="contained"
+                                onPress={() => { sendServoCommand(0xC1); setIsOn(true); }}
+                                disabled={isOn || isLoading}
+                                loading={isLoading && !isOn}
+                                style={[styles.controlButton, { backgroundColor: designTheme.buttonActive }]}
+                                labelStyle={styles.controlButtonLabel}
+                            >
+                                Active
+                            </Button>
 
+                            <Button
+                                mode="contained"
+                                onPress={() => { sendServoCommand(0xC0); setIsOn(false); }}
+                                disabled={!isOn || isLoading}
+                                loading={isLoading && isOn}
+                                style={[styles.controlButton, { backgroundColor: designTheme.buttonInactive }]}
+                                labelStyle={styles.controlButtonLabel}
+                            >
+                                Deactive
+                            </Button>
+
+                            <Button
+                                mode="contained"
+                                onPress={() => setShowSummaryModal(true)}
+                                disabled={!imageData}
+                                style={[styles.controlButton, { backgroundColor: designTheme.buttonInactive }]}
+                                labelStyle={styles.controlButtonLabel}
+                            >
+                                Summarize
+                            </Button>
+                        </View>
+                    </Surface>
+                </View>
+
+                {/* Analysis Modal - Summary appears only when "Summarize" is clicked */}
                 <Portal>
                     <Modal
                         visible={showSummaryModal}
-                        onDismiss={() => {
-                            setShowSummaryModal(false);
-                            setAnalysisResult('');
-                        }}
+                        onDismiss={() => setShowSummaryModal(false)}
                         contentContainerStyle={styles.modalContainer}
                     >
-                        <Card style={styles.summaryCard}>
-                            <Card.Title
-                                title="Image Analysis"
-                                titleStyle={styles.modalTitle}
-                                left={() => (
-                                    <View style={styles.avatarContainer}>
-                                        <Icon name="robot" size={24} color="#19C37D" />
-                                    </View>
-                                )}
-                                right={() => (
-                                    <TouchableOpacity
-                                        onPress={() => setShowSummaryModal(false)}
-                                        style={styles.closeButton}
-                                    >
-                                        <Icon name="close" size={24} color="#666" />
-                                    </TouchableOpacity>
-                                )}
-                            />
-                            <Card.Content>
-                                <ScrollView style={styles.summaryScroll} showsVerticalScrollIndicator={false}>
-                                    {imageData ? (
-                                        <>
+                        <Surface style={styles.modalSurface}>
+                            <View style={styles.modalHeader}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <Icon name="brain" size={24} color={theme.colors.primary} />
+                                    <Text style={styles.modalTitle}>Image Analysis</Text>
+                                </View>
+                                <IconButton
+                                    icon="close"
+                                    size={24}
+                                    onPress={() => setShowSummaryModal(false)}
+                                />
+                            </View>
+                            <Divider />
+                            <View style={styles.modalContent}>
+                                <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                                    {imageData && (
+                                        <View style={styles.thumbnailContainer}>
                                             <Image
                                                 source={{ uri: imageData }}
-                                                style={styles.selectedImage}
-                                                resizeMode="contain"
+                                                style={{ width: '100%', height: '100%' }}
+                                                resizeMode="cover"
                                             />
-                                            {isAnalyzing ? (
-                                                <ActivityIndicator
-                                                    size="large"
-                                                    color={theme.colors.primary}
-                                                    style={styles.loader}
-                                                />
-                                            ) : (
-                                                <View style={styles.chatBubble}>
-                                                    <Text style={styles.summaryText}>
-                                                        {analysisResult || 'Click the button below to analyze'}
-                                                    </Text>
-                                                </View>
-                                            )}
-                                            <Button
-                                                mode="contained"
-                                                onPress={() => sendImageForAnalysis(imageData.split(',')[1])}
-                                                style={styles.selectButton}
-                                                loading={isAnalyzing}
-                                                disabled={isAnalyzing}
-                                            >
-                                                Analyze Current Image
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <Button
-                                            mode="contained"
-                                            onPress={handleImagePick}
-                                            style={styles.selectButton}
-                                            icon="image"
-                                        >
-                                            Select Image for Analysis
-                                        </Button>
+                                        </View>
                                     )}
-                                </ScrollView>
-                            </Card.Content>
-                        </Card>
+                                    <View style={{ flex: 1, marginLeft: 16 }}>
+                                        <Text style={styles.modalSummaryHeader}>
+                                            {isAnalyzing
+                                                ? "Processing image..."
+                                                : analysisResult
+                                                    ? analysisResult.split('.')[0] + '.'
+                                                    : "No analysis available"}
+                                        </Text>
+                                    </View>
+                                </View>
+                                {isAnalyzing ? (
+                                    <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+                                        <ActivityIndicator size="large" color={theme.colors.primary} />
+                                    </View>
+                                ) : (
+                                    <ScrollView style={styles.resultScroll}>
+                                        <Text style={styles.resultText}>
+                                            {analysisResult || 'No analysis available for this image yet.'}
+                                        </Text>
+                                    </ScrollView>
+                                )}
+                                <View style={styles.modalButtonContainer}>
+                                    <Button
+                                        mode="outlined"
+                                        onPress={() => setShowSummaryModal(false)}
+                                        style={styles.modalButton}
+                                    >
+                                        Close
+                                    </Button>
+                                    <Button
+                                        mode="contained"
+                                        onPress={() => imageData && sendImageForAnalysis(imageData)}
+                                        style={styles.modalButton}
+                                        loading={isAnalyzing}
+                                        disabled={!imageData || isAnalyzing}
+                                    >
+                                        Analyze Again
+                                    </Button>
+                                </View>
+                            </View>
+                        </Surface>
                     </Modal>
                 </Portal>
             </View>
@@ -765,153 +354,137 @@ const DevicesIotScreen: React.FC = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     container: {
         flex: 1,
         paddingHorizontal: 16,
+        paddingBottom: 16,
     },
-    card: {
-        marginVertical: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#EEEEEE',
+    row: {
+        flex: 1,
+        flexDirection: 'row',
     },
-    panelTitle: {
-        textAlign: 'center',
+    // Left Card (Captured Image)
+    leftCard: {
+        flex: 3,
+        borderRadius: 24,
+        padding: 16,
+        marginRight: 16,
+    },
+    cardTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
         marginBottom: 16,
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#424242',
-        alignItems: "center"
     },
-    twoPaneLayout: {
-        flexDirection: 'row',
-        gap: 16,
-    },
-    controlsPanel: {
+    imageArea: {
         flex: 1,
-        borderWidth: 1,
-        borderColor: '#EEEEEE',
-        borderRadius: 12,
-        padding: 16,
-    },
-    controls: {
-        gap: 12,
-    },
-    button: {
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 12,
-    },
-    buttonDisabled: {
-        backgroundColor: '#EEEEEE',
-    },
-    buttonText: {
-        marginLeft: 8,
-        fontWeight: '500',
-    },
-    imagePreview: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#EEEEEE',
-        borderRadius: 12,
-        padding: 16,
-    },
-    imageContainer: {
-        width: '100%',
-        height: 200,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f5f5f5',
-        borderRadius: 8,
+        borderRadius: 16,
         overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    image: {
+    previewImage: {
+        width: 300,
+        height: 300,
+    },
+    fullImage: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
-    },
-    imageFull: {
-        width: '100%',
-        height: 400,
-        resizeMode: 'contain',
     },
     waitingContainer: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
     },
-    waitingText: {
-        color: '#777',
-        marginTop: 8,
+    loadingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    dataOutput: {
-        marginTop: 16,
-        borderWidth: 1,
-        borderColor: '#EEEEEE',
-        borderRadius: 12,
+    closeImageButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    // Right Card (Device Control)
+    rightCard: {
+        flex: 2,
+        borderRadius: 24,
         padding: 16,
+        justifyContent: 'center', // Center vertically
     },
-    dataTitle: {
-        textAlign: 'center',
-        marginBottom: 16,
-        color: '#2E7D32',
-        fontWeight: '600',
+    centeredButtonGroup: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 12,
     },
-    base64Scroll: {
-        maxHeight: 100,
+    controlButton: {
+        borderRadius: 12,
+        marginVertical: 6,
+        height: 50,
+        justifyContent: 'center',
+        width: 150,
     },
-    base64Text: {
-        fontSize: 10,
-        color: '#555',
+    controlButtonLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
     },
-    summaryButton: {
-        backgroundColor: '#E8F5E9',
-    },
+    // Modal Styles
     modalContainer: {
+        marginHorizontal: 16,
         backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 10,
-        margin: 20,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    modalSurface: {
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        padding: 16,
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     modalTitle: {
+        fontSize: 20,
         fontWeight: 'bold',
-        fontSize: 18,
     },
-    closeButton: {
-        padding: 5,
+    modalContent: {
+        padding: 16,
     },
-    selectButton: {
-        marginTop: 20,
+    thumbnailContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
     },
-    selectedImage: {
-        width: '100%',
-        height: 200,
-        marginBottom: 20,
-    },
-    summaryText: {
+    modalSummaryHeader: {
         fontSize: 16,
-        lineHeight: 24,
+        fontWeight: '600',
+        marginBottom: 4,
     },
-    summaryScroll: {
-        maxHeight: 300,
+    resultScroll: {
+        maxHeight: 200,
+        marginBottom: 16,
     },
-    avatarContainer: {
-        backgroundColor: '#E8F5E9',
-        borderRadius: 20,
-        padding: 5,
+    resultText: {
+        fontSize: 14,
+        lineHeight: 20,
+        color: '#444',
     },
-    chatBubble: {
-        backgroundColor: '#DCF8C6',
-        borderRadius: 10,
-        padding: 10,
-        marginTop: 10,
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginTop: 16,
+        gap: 8,
     },
-    loader: {
-        marginTop: 20,
+    modalButton: {
+        borderRadius: 8,
+        minWidth: 100,
     },
 });
 
 export default DevicesIotScreen;
-

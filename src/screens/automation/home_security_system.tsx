@@ -114,7 +114,7 @@ import Slider from '@react-native-community/slider';
 import dgram from 'react-native-udp';
 import { Buffer } from 'buffer';
 
-const ESP32_IP = '192.168.0.196'; // Change this to your ESP32 IP
+const ESP32_IP = 'esptest.local'; // Change this to your ESP32 IP
 const ESP32_PORT = 8888;
 
 export default function HomeSecurity() {

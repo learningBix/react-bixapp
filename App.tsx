@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import LearnAndPlayScreen from './src/screens/learnandplay/LearnAndPlayScreen';
 import HomeScreen from './src/screens/homescreen/homescreen';
 import HallSensorScreen from './src/screens/hallsensor/hallsensor';
 import StructureScreen from './src/screens/structure/structurescreen';
@@ -36,6 +37,12 @@ import RoboticCarController from './src/screens/robotic_car/robotics_car';
 import obstacleCarController from './src/screens/robotic_car/obstacleavoidance';
 import InputHiveStatus from './src/screens/input/input';
 import SensorHiveStatus from './src/screens/sensor/sensor';
+import AIScreen from './src/screens/ai_activities/ai_activities';
+import FaceDetectionDoorAlarmScreen from './src/screens/ai_activities/camera_based/FaceDetectionDoorAlarmScreen';
+import VoiceControllerOutputScreen from '././src/screens/ai_activities/voice_based/VoiceControllerOutputScreen'
+import voice_controll_car from './src/screens/ai_activities/voice_based/VoiceControllerCar';
+import FaceTractionCameraScreen from './src/screens/ai_activities/camera_based/FaceDetectionBotScreen';
+
 
 
 const theme = {
@@ -47,6 +54,7 @@ const theme = {
 };
 
 type RootStackParamList = {
+  LearnAndPlay: undefined;
   Home: undefined;
   StructureScreen: undefined;
   HomeScreenSurveillance: undefined;
@@ -60,13 +68,16 @@ const App: React.FC = () => {
   return (
     <PaperProvider theme={theme}>
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator initialRouteName="LearnAndPlay" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="LearnAndPlay" component={LearnAndPlayScreen} />
           <Stack.Screen name="Home" component={HomeScreen} />
+
           <Stack.Screen name="StructureScreen" component={StructureScreen} />
           <Stack.Screen name="AutomationScreen" component={AutomationScreen} />
           <Stack.Screen name="Roboticsscreen" component={RoboticsScreen} />
           <Stack.Screen name="InputHiveStatus" component={InputHiveStatus} /> 
           <Stack.Screen name="SensorHiveStatus" component={SensorHiveStatus} /> 
+          <Stack.Screen name="AIScreen" component={AIScreen}/>
           <Stack.Screen name="robocar" component={RoboticCarController} /> 
           <Stack.Screen name="obstacleavoid" component={obstacleCarController} /> 
           <Stack.Screen name="OutputScreen" component={OutputScreen} /> 
@@ -95,6 +106,11 @@ const App: React.FC = () => {
           <Stack.Screen name="Dashboard" component={Dashboard} options={{ title: 'dashboard' }}/>
           <Stack.Screen name="petfeeder" component={petfeeder} options={{ title: 'petfeeder' }}/>
           <Stack.Screen name="safebox" component={safebox} options={{ title: 'safebox' }}/>
+          <Stack.Screen name="FaceDetectionDoorAlarmScreen" component={FaceDetectionDoorAlarmScreen} />
+          <Stack.Screen name="VoiceControllerOutputScreen" component={VoiceControllerOutputScreen} />
+          <Stack.Screen name="VoiceControllerCarScreen" component={voice_controll_car} />
+          <Stack.Screen name="FaceDetectionBotScreen" component={FaceTractionCameraScreen} />
+          {/* <Stack.Screen name="homescreen" component={HomeScreen} /> */}
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
@@ -102,5 +118,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-

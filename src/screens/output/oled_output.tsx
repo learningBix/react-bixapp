@@ -1,184 +1,316 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import Svg, { Polygon } from 'react-native-svg';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import dgram from 'react-native-udp';
 import { Buffer } from 'buffer';
 
-const ESP32_IP = '192.168.0.196';
+const ESP32_IP = 'esptest.local';
 const ESP32_PORT = 8888;
+
+const socket = dgram.createSocket('udp4');
+
+socket.on('error', (err) => {
+  console.error('Socket error:', err);
+  socket.close();
+});
+
+socket.bind(ESP32_PORT);
 
 export default function OLEDDisplay() {
   const [isOn, setIsOn] = useState(false);
   const [text, setText] = useState('');
-  const lastSentTime = useRef(0);
+  const [coordinates, setCoordinates] = useState({ x: '10', y: '20' });
 
   const sendUDPCommand = (command, data = '') => {
-    const now = Date.now();
-    if (now - lastSentTime.current < 50) return;
-    lastSentTime.current = now;
-
-    const client = dgram.createSocket('udp4');
-    let message;
-
-    if (data) {
-      message = Buffer.from([command, ...Buffer.from(data)]);
+    let buffer;
+    
+    if (command === 0xD6) {
+      const x = parseInt(coordinates.x) || 0;
+      const y = parseInt(coordinates.y) || 0;
+      buffer = Buffer.from([command, x, y]);
+    } else if (command === 0xD7 && data) {
+      const textBuffer = Buffer.from(data);
+      buffer = Buffer.concat([Buffer.from([command]), textBuffer]);
     } else {
-      message = Buffer.from([command]);
+      buffer = Buffer.from([command]);
     }
 
-    client.on('error', (err) => {
-      console.error('UDP Error:', err);
-      client.close();
-    });
-
-    client.bind(0, () => {
-      client.send(
-        message,
-        0,
-        message.length,
-        ESP32_PORT,
-        ESP32_IP,
-        (err) => {
-          if (err) console.error('Send Failed:', err);
-          client.close();
-        }
-      );
+    socket.send(buffer, 0, buffer.length, ESP32_PORT, ESP32_IP, (err) => {
+      if (err) console.error('UDP Send Error:', err);
     });
   };
 
   const handlePowerToggle = (state) => {
     setIsOn(state);
-    if (state) {
-      sendUDPCommand(0xD6);
-    } else {
-      sendUDPCommand(0xD9);
-    }
+    sendUDPCommand(state ? 0xD6 : 0xD9);
   };
 
   const handleDisplayText = () => {
-    if (text) {
-      sendUDPCommand(0xD7, text);
+    if (text && isOn) sendUDPCommand(0xD7, text);
+  };
+
+  const handleCoordinateChange = (axis, value) => {
+    if (/^\d*$/.test(value)) {
+      setCoordinates(prev => ({
+        ...prev,
+        [axis]: value
+      }));
     }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Power Toggle Buttons */}
-      <View style={styles.toggleContainer}>
-        <TouchableOpacity
-          style={[styles.toggleButton, isOn && styles.activeButton]}
-          onPress={() => handlePowerToggle(true)}
-        >
-          <Text style={styles.buttonText}>ON</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toggleButton, !isOn && styles.activeButton]}
-          onPress={() => handlePowerToggle(false)}
-        >
-          <Text style={styles.buttonText}>OFF</Text>
-        </TouchableOpacity>
+    <View style={styles.mainContainer}>
+      <View style={styles.contentContainer}>
+        <View style={styles.purpleContainer}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.headerText}>OLED</Text>
+          </View>
+
+          <View style={styles.controlsContainer}>
+            <View style={styles.powerSection}>
+              <View style={styles.powerIconContainer}>
+                <Icon
+                  name="power"
+                  size={32}
+                  color="#ff69b4"
+                  style={{ marginRight: 10 }}
+                />
+                <Text style={styles.powerLabel}>Power Buttons</Text>
+              </View>
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[styles.button, styles.onButton]}
+                  onPress={() => handlePowerToggle(true)}
+                >
+                  <Text style={styles.buttonText}>ON</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.offButton]}
+                  onPress={() => handlePowerToggle(false)}
+                >
+                  <Text style={styles.buttonText}>OFF</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.hexagonContainer}>
+            <View style={styles.hexagonWrapper}>
+              <Svg style={StyleSheet.absoluteFill} viewBox="0 0 100 100">
+                <Polygon
+                  points="25,0 75,0 100,50 75,100 25,100 0,50"
+                  fill="#7CFC00"
+                />
+              </Svg>
+
+              <View style={styles.hexagonContent}>
+                <View style={styles.coordsContainer}>
+                  <View style={styles.coordRow}>
+                    <View style={styles.coordLabel}>
+                      <Text style={styles.coordText}>x</Text>
+                    </View>
+                    <TextInput
+                      style={styles.coordValue}
+                      value={coordinates.x}
+                      onChangeText={(value) => handleCoordinateChange('x', value)}
+                      keyboardType="numeric"
+                      maxLength={3}
+                    />
+                  </View>
+                  <View style={styles.coordRow}>
+                    <View style={styles.coordLabel}>
+                      <Text style={styles.coordText}>y</Text>
+                    </View>
+                    <TextInput
+                      style={styles.coordValue}
+                      value={coordinates.y}
+                      onChangeText={(value) => handleCoordinateChange('y', value)}
+                      keyboardType="numeric"
+                      maxLength={3}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.oledScreen} />
+                
+                <TextInput
+                  style={styles.textInput}
+                  value={text}
+                  onChangeText={setText}
+                  placeholder="Write something..."
+                  placeholderTextColor="#ffd1e6"
+                />
+                
+                <TouchableOpacity 
+                  style={styles.writeButton} 
+                  onPress={handleDisplayText}
+                >
+                  <Text style={styles.writeButtonText}>Send Text</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
       </View>
-
-      {/* Text Input Section */}
-      <Text style={styles.heading}>Enter Text to Display on OLED:</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Text here"
-        placeholderTextColor="#999"
-        value={text}
-        onChangeText={setText}
-      />
-
-      {/* Display Button */}
-      <TouchableOpacity style={styles.displayButton} onPress={handleDisplayText}>
-        <Text style={styles.displayButtonText}>Display</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
-const { width } = Dimensions.get('window');
-
+// Keep all styles EXACTLY as original
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
-    backgroundColor: '#fef9e7',
+    backgroundColor: '#4b0082',
+  },
+  contentContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  purpleContainer: {
+    width: '90%',
+    backgroundColor: '#663399',
+    borderRadius: 30,
+    padding: 20,
+    flexDirection: 'row',
+    position: 'relative',
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: -22,
+    left: '50%',
+    transform: [{ translateX: -100 }],
+    backgroundColor: '#ff69b4',
+    paddingHorizontal: 40,
+    paddingVertical: 10,
+    borderRadius: 25,
+    zIndex: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerText: {
+    color: 'white',
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  controlsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  powerSection: {
+    alignItems: 'flex-start',
+  },
+  powerIconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  powerLabel: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+  },
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 15,
+    marginRight: 15,
+  },
+  onButton: {
+    backgroundColor: '#ff69b4',
+  },
+  offButton: {
+    backgroundColor: '#ff69b4',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  hexagonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hexagonWrapper: {
+    width: 280,
+    height: 250,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hexagonContent: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  toggleContainer: {
+  coordsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 5,
-    marginBottom: 20,
-    borderWidth: 3,
-    borderColor: '#000',
-    shadowColor: '#000',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 0.3,
+    position: 'absolute',
+    top: 15,
   },
-  toggleButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 3,
-    borderColor: '#000',
+  coordRow: {
+    flexDirection: 'row',
     marginHorizontal: 5,
-    backgroundColor: '#f8f9fa',
   },
-  activeButton: {
-    backgroundColor: '#81b0ff',
-    borderColor: '#000',
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
-    fontFamily: 'Comic Sans MS',
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-    textAlign: 'center',
-    marginBottom: 10,
-    fontFamily: 'Comic Sans MS',
-    textShadowColor: '#aaa',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 2,
-  },
-  input: {
-    width: width * 0.7,
-    padding: 12,
-    fontSize: 16,
-    borderWidth: 3,
-    borderColor: '#000',
-    borderRadius: 10,
-    backgroundColor: '#ffffff',
-    textAlign: 'center',
-    marginBottom: 15,
-    fontFamily: 'Comic Sans MS',
-    shadowColor: '#000',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 0.3,
-  },
-  displayButton: {
-    backgroundColor: '#ff9800',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    borderWidth: 3,
-    borderColor: '#000',
+  coordLabel: {
+    backgroundColor: '#ff69b4',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 0.3,
   },
-  displayButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  coordValue: {
+    backgroundColor: '#ff69b4',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginLeft: 5,
+    minWidth: 40,
     color: 'white',
-    fontFamily: 'Comic Sans MS',
+    fontWeight: 'bold',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  coordText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  oledScreen: {
+    width: 120,
+    height: 70,
+    backgroundColor: 'black',
+    borderRadius: 5,
+    marginVertical: 10,
+  },
+  textInput: {
+    width: 200,
+    height: 40,
+    backgroundColor: '#ff69b4',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 8,
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
+    borderWidth: 1,
+    borderColor: '#ffffff80',
+  },
+  writeButton: {
+    backgroundColor: '#ff69b4',
+    borderRadius: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  writeButtonText: {
+    color: 'white',
+    fontSize: 14,
   },
 });

@@ -1,278 +1,255 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Text, Switch } from "react-native";
-import Slider from "@react-native-community/slider";
-import dgram from "react-native-udp";
-import { Buffer } from "buffer";
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Dimensions,
+} from 'react-native';
+import dgram from 'react-native-udp';
+import CustomSlider from '../../component/slider';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Buffer } from 'buffer';
 
-const ESP32_IP = "192.168.0.196";
-const ESP32_PORT = 12345;
+const { width } = Dimensions.get('window');
 
-const PersonCounter = () => {
+// UDP setup
+const SEND_PORT = 8888;
+const SEND_HOST = 'esptest.local'; // Your ESP32's IP
+const LISTEN_PORT = 12345;         // Separate listening port
+
+export default function PersonCounter() {
+  const [count, setCount] = useState(0);
+  const [distance, setDistance] = useState(50);
   const [isToggled, setIsToggled] = useState(false);
-  const [distanceThreshold, setDistanceThreshold] = useState(50);
-  const [personCount, setPersonCount] = useState(0);
+  const socketRef = useRef(null);
   const lastSentTime = useRef(0);
-  const udpSocketRef = useRef(null);
 
-  const sendUDPCommand = (command, value = 0) => {
+  // Initialize UDP socket for **listening** only once
+  useEffect(() => {
+    const udpSocket = dgram.createSocket('udp4');
+    socketRef.current = udpSocket;
+
+    udpSocket.bind(LISTEN_PORT, () => {
+      console.log(`📡 Listening for UDP on port ${LISTEN_PORT}`);
+    });
+
+    udpSocket.on('message', (msg, rinfo) => {
+      // 1) log raw buffer + sender info
+      console.log('📥 Raw UDP packet:', msg, 'from', rinfo);
+
+      let parsedValue;
+      // 2) try binary parse
+      try {
+        parsedValue = msg.readUInt8(0);
+        console.log('⚙️  Parsed as UInt8 →', parsedValue);
+      } catch (e) {
+        // fallback to text parse
+        const text = msg.toString('utf8').trim();
+        parsedValue = parseInt(text, 10);
+        console.log('⚙️  Parsed as string →', text);
+      }
+
+      // 3) update state if valid
+      if (!isNaN(parsedValue)) {
+        setCount(parsedValue);
+      }
+    });
+
+    udpSocket.on('error', (err) => {
+      console.error('🔴 UDP socket error:', err);
+      udpSocket.close();
+    });
+
+    return () => {
+      udpSocket.close();
+    };
+  }, []);
+
+  // Send UDP command with 0xE6+distance when toggled ON, 0xC0 when OFF
+  const sendToggleCommand = () => {
     const now = Date.now();
     if (now - lastSentTime.current < 50) return;
     lastSentTime.current = now;
 
-    const client = dgram.createSocket("udp4");
-    const message = Buffer.from([command, Math.round(value)]);
+    const newState = !isToggled;
+    setIsToggled(newState);
 
-    client.on("error", (err) => {
-      console.error("UDP Error:", err);
-      client.close();
-    });
+    const client = dgram.createSocket('udp4');
+    const dist = Math.round(distance);
+    const message = newState
+      ? Buffer.from([0xE6, dist])
+      : Buffer.from([0xC0]);
 
     client.bind(0, () => {
-      client.send(message, 0, message.length, ESP32_PORT, ESP32_IP, (err) => {
-        if (err) console.error("Send Failed:", err);
+      client.send(message, 0, message.length, SEND_PORT, SEND_HOST, (err) => {
+        if (err) console.error('🔴 Send error:', err);
         client.close();
       });
     });
 
-    console.log(`📡 Sent: 0x${command.toString(16).toUpperCase()} ${value}`);
+    console.log(`📡 Sent UDP → ${newState ? `E6 ${dist}` : 'C0'}`);
   };
 
-  useEffect(() => {
-    if (isToggled) {
-      sendUDPCommand(0xE6, distanceThreshold);
-      
-      // Setup UDP listener
-      udpSocketRef.current = dgram.createSocket("udp4");
-      udpSocketRef.current.bind(ESP32_PORT);
+  // Send distance updates when slider changes (only when ON)
+  const handleDistanceChange = (value) => {
+    setDistance(value);
+    if (!isToggled) return;
 
-      udpSocketRef.current.on("message", (message) => {
-        try {
-          console.log(`📩 Received: ${message.toString('hex')}`);
-          if (message.length > 0) {
-            setPersonCount(message[0]); // Assume first byte is always count
-          }
-        } catch (error) {
-          console.error("Parse Error:", error);
-        }
+    const now = Date.now();
+    if (now - lastSentTime.current < 50) return;
+    lastSentTime.current = now;
+
+    const client = dgram.createSocket('udp4');
+    const dist = Math.round(value);
+    const message = Buffer.from([0xE6, dist]);
+
+    client.bind(0, () => {
+      client.send(message, 0, message.length, SEND_PORT, SEND_HOST, (err) => {
+        if (err) console.error('🔴 Send error:', err);
+        client.close();
       });
+    });
 
-      udpSocketRef.current.on("error", (err) => {
-        console.error("UDP Error:", err);
-        udpSocketRef.current?.close();
-      });
-
-      return () => udpSocketRef.current?.close();
-    } else {
-      sendUDPCommand(0xD9);
-      setPersonCount(0);
-      udpSocketRef.current?.close();
-    }
-  }, [isToggled]);
+    console.log(`📡 Sent UDP → E6 ${dist}`);
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.inlineControls}>
-        <View style={styles.counterCircle}>
-          <Text style={styles.counterNumber}>{personCount}</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.card}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Icon name="account" size={24} color="white" style={styles.headerIcon} />
+          <Text style={styles.headerText}>Person Counter</Text>
         </View>
-        <Switch
-          trackColor={{ false: "#767577", true: "#81b0ff" }}
-          thumbColor={isToggled ? "#f5dd4b" : "#f4f3f4"}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={setIsToggled}
-          value={isToggled}
-        />
-      </View>
 
-      <View style={styles.sliderBox}>
-        <Text style={styles.sliderLabel}>🔭 Distance Threshold:</Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={100}
-          value={distanceThreshold}
-          onValueChange={(value) => {
-            setDistanceThreshold(value);
-            if (isToggled) sendUDPCommand(0xE6, value);
-          }}
-          minimumTrackTintColor="#FFD700"
-          maximumTrackTintColor="#F0E68C"
-          thumbTintColor="#FFA500"
-          disabled={!isToggled}
-        />
-        <Text style={styles.sliderValue}>{Math.round(distanceThreshold)}%</Text>
+        {/* **Count Display (and parsed/raw data)** */}
+        <View style={styles.counterContainer}>
+          <View style={styles.counterBorder}>
+            <View style={[styles.counterCircle, styles.shiftedCounter]}>
+              <Text style={styles.counterText}>{count}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Distance Slider */}
+        <View style={styles.sliderContainer}>
+          <View style={styles.sliderHeader}>
+            <View style={styles.distanceLabel}>
+              <Icon name="tape-measure" size={24} color="white" style={styles.distanceLabelIcon} />
+              <Text style={styles.distanceLabelText}>Distance (cm)</Text>
+            </View>
+            <View style={styles.distanceValue}>
+              <Text style={styles.distanceValueText}>{distance}</Text>
+            </View>
+          </View>
+
+          <CustomSlider
+            value={distance}
+            onValueChange={handleDistanceChange}
+            minimumValue={0}
+            maximumValue={100}
+            trackColor="#FFEB3B"
+            backgroundColor="#483285"
+            thumbColor="white"
+          />
+        </View>
+
+        {/* Toggle Button */}
+        <View style={styles.footer}>
+          <TouchableOpacity onPress={sendToggleCommand}>
+            <View style={[styles.setButton, { backgroundColor: '#e85b96' }]}>
+              <Text style={styles.setButtonText}>{isToggled ? 'ON' : 'OFF'}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
-};
+}
 
-// Keep the same styles as before
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#F0F9FF",
-    padding: 10,
-    borderRadius: 20,
     flex: 1,
-    justifyContent: "space-around",
-    alignItems: "center",
-    flexShrink: 1,
+    backgroundColor: '#4d208c',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  inlineControls: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    alignItems: "center",
-    padding: 10,
+  card: {
+    width: width * 0.85,
+    backgroundColor: '#5c2b9e',
+    borderRadius: 24,
+    paddingTop: 25,
+    paddingBottom: 25,
+    paddingHorizontal: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 10,
+    transform: [{ translateY: -4 }],
+  },
+  header: {
+    backgroundColor: '#e85b96',
+    paddingVertical: 6,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    position: 'absolute',
+    top: -15,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  headerIcon: { marginRight: 8 },
+  headerText: { color: 'white', fontSize: 20, fontWeight: 'bold' },
+
+  counterContainer: { alignItems: 'center', marginVertical: 10 },
+  counterBorder: {
+    width: width * 0.13,
+    height: width * 0.13,
+    borderRadius: width * 0.065,
+    backgroundColor: '#e85b96',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   counterCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#A5D6A7",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 4,
-    borderColor: "#2E7D32",
-    elevation: 10,
+    width: width * 0.11,
+    height: width * 0.11,
+    borderRadius: width * 0.055,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  counterNumber: {
-    fontSize: 36,
-    fontWeight: "900",
-    color: "#1B5E20",
-    textShadowColor: "#FFF",
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 5,
-  },
-  sliderBox: {
-    backgroundColor: "#E3F2FD",
-    borderRadius: 20,
-    padding: 15,
-    width: "90%",
-    marginTop: 20,
-    elevation: 5,
-    marginBottom: 15,
-  },
-  sliderLabel: {
-    fontSize: 16,
-    color: "#0D47A1",
-    fontWeight: "bold",
+  shiftedCounter: { marginTop: 10 },
+  counterText: { fontSize: width * 0.05, color: 'white', fontWeight: 'bold' },
+
+  sliderContainer: { width: '100%', marginBottom: 20 },
+  sliderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  slider: {
-    width: "100%",
-    height: 35,
+  distanceLabel: { flexDirection: 'row', alignItems: 'center' },
+  distanceLabelIcon: { marginRight: 8 },
+  distanceLabelText: { color: 'white', fontSize: 16 },
+  distanceValue: {
+    backgroundColor: '#e85b96',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 6,
   },
-  sliderValue: {
-    fontSize: 16,
-    color: "#0D47A1",
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 5,
+  distanceValueText: { color: 'white', fontSize: 14, fontWeight: 'bold' },
+
+  footer: {
+    position: 'absolute',
+    bottom: -15,
+    alignSelf: 'center',
+    zIndex: 1,
   },
+  setButton: { paddingVertical: 10, paddingHorizontal: 30, borderRadius: 20 },
+  setButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
 });
-
-export default PersonCounter;
-
-
-
-
-
-// import React, { useState, useRef } from "react";
-// import { 
-//   View, 
-//   Text, 
-//   Button, 
-//   Alert, 
-//   ActivityIndicator, 
-//   PermissionsAndroid, 
-//   Platform 
-// } from "react-native";
-// import AudioRecorderPlayer from "react-native-audio-recorder-player";
-// import axios from "axios";
-
-// const API_BASE_URL = "http://98.70.77.148:8000"; // Replace with your backend IP
-
-// const SpeechToTextLive = () => {
-//   const [recording, setRecording] = useState(false);
-//   const [transcription, setTranscription] = useState("");
-//   const [loading, setLoading] = useState(false);
-//   const audioRecorderPlayer = useRef(new AudioRecorderPlayer()).current;
-
-//   // Request microphone permissions (Android only)
-//   const requestPermissions = async () => {
-//     if (Platform.OS === "android") {
-//       await PermissionsAndroid.requestMultiple([
-//         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-//         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-//       ]);
-//     }
-//   };
-
-//   // Start recording audio
-//   const startRecording = async () => {
-//     await requestPermissions();
-//     setRecording(true);
-//     setTranscription(""); // Clear previous transcription
-
-//     try {
-//       const result = await audioRecorderPlayer.startRecorder();
-//       console.log("Recording started at:", result);
-//     } catch (error) {
-//       Alert.alert("Error", "Failed to start recording.");
-//       console.error(error);
-//     }
-//   };
-
-//   // Stop recording and send audio file to backend
-//   const stopRecording = async () => {
-//     setRecording(false);
-//     setLoading(true);
-
-//     try {
-//       const result = await audioRecorderPlayer.stopRecorder();
-//       console.log("Recording saved at:", result);
-
-//       // Prepare the audio file for upload
-//       const formData = new FormData();
-//       formData.append("audio", {
-//         uri: result,
-//         type: "audio/wav",  // Change to match your backend's expected format
-//         name: "speech.wav",
-//       });
-
-//       // Send audio file to the speech-to-text backend
-//       const response = await axios.post(`${API_BASE_URL}/speech-to-text`, formData, {
-//         headers: { "Content-Type": "multipart/form-data" },
-//       });
-
-//       console.log("Full API Response:", response.data); // Debugging log
-
-//       // Extract transcription from API response
-//       const extractedText = response.data?.DisplayText || "No transcription available";
-//       setTranscription(extractedText);
-//     } catch (error) {
-//       console.error("API Error:", error.response?.data || error);
-//       Alert.alert("Error", error.response?.data?.error || "Something went wrong.");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-//       <Button 
-//         title={recording ? "Stop Recording" : "Start Recording"} 
-//         onPress={recording ? stopRecording : startRecording} 
-//       />
-//       {loading && <ActivityIndicator size="large" color="blue" />}
-//       {transcription ? (
-//         <Text style={{ marginTop: 20, textAlign: "center" }}>{transcription}</Text>
-//       ) : null}
-//     </View>
-//   );
-// };
-
-// export default SpeechToTextLive;
-
-
-

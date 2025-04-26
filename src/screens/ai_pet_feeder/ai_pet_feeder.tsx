@@ -18,37 +18,37 @@ const petfeeder: React.FC = () => {
 
     const handleToggle = () => setToggleEnabled((prev) => !prev);
 
-    const sendServoCommand = (angle: number) => {
-        const now = Date.now();
+    // const sendServoCommand = (angle: number) => {
+    //     const now = Date.now();
 
-        if (now - lastSentTime.current < 50) {
+    //     if (now - lastSentTime.current < 50) {
 
-            return;
-        }
+    //         return;
+    //     }
 
-        lastSentTime.current = now; // Update last sent time
+    //     lastSentTime.current = now; // Update last sent time
 
-        const client = dgram.createSocket('udp4');
+    //     const client = dgram.createSocket('udp4');
 
-        client.on('error', (err) => {
-            console.error('UDP Socket Error:', err);
-            client.close();
-        });
+    //     client.on('error', (err) => {
+    //         console.error('UDP Socket Error:', err);
+    //         client.close();
+    //     });
 
-        client.bind(0, () => {
-            const message = Buffer.from([0xC3, angle]);
-            client.send(message, 0, message.length, 8888, '192.168.0.101', (error) => {
-                if (error) {
-                    console.error('UDP Send Error:', error);
-                }
-                client.close();
-            });
-        });
-    };
+    //     client.bind(0, () => {
+    //         const message = Buffer.from([0xC3, angle]);
+    //         client.send(message, 0, message.length, 8888, 'esptest.local', (error) => {
+    //             if (error) {
+    //                 console.error('UDP Send Error:', error);
+    //             }
+    //             client.close();
+    //         });
+    //     });
+    // };
 
     const handleSliderChange = (value: number) => {
         setSliderValue(value);
-        sendServoCommand(Math.round(value)); // Send immediately with rate limit
+        // sendServoCommand(Math.round(value)); // Send immediately with rate limit
     };
     return (
         <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
@@ -56,7 +56,7 @@ const petfeeder: React.FC = () => {
                 <View style={styles.cameraCard}>
                     {toggleEnabled ? (
                         <WebView
-                            source={{ uri: 'http://192.168.0.101:81/stream' }}
+                            source={{ uri: 'http://98.70.77.148:5999/animal_video_feed' }}
                             style={styles.webview}
                             allowsFullscreenVideo={false}
                             scrollEnabled={false}

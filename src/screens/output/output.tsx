@@ -1,45 +1,59 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { SafeAreaView, ScrollView, View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 
 interface AutomationScreenProps {
   navigation: any;
 }
 
+// Import images
+import buzzerImage from '../../Output(s3)/buzzer.png';
+import fanImage from '../../Output(s3)/fan.png';
+import LEDImage from '../../Output(s3)/buzzer.png';
+import motorImage from '../../Output(s3)/motor.png';
+import OLEDImage from '../../Output(s3)/OLED.png';
+import RGBImage from '../../Output(s3)/RGB.png';
+import servoImage from '../../Output(s3)/servo.png';
+import vibrationImage from '../../Output(s3)/vibration.png';
+import music from '../../Output(s3)/music.png'
+
 const automationCategories = [
-    { name: "RGB LED", icon: "lightbulb-o", screen: "RGBLEDScreen" },
-    { name: "Vibration Motor", icon: "vibration", screen: "VibrationMotorScreen" },
-    { name: "Buzzer", icon: "volume-up", screen: "BuzzerScreen" },
-    { name: "Music", icon: "music", screen: "MusicScreen" },
-    { name: "Fan Block", icon: "fan", screen: "FanBlockScreen" },
-    { name: "Servo Motor / WiFi", icon: "wifi", screen: "ServoMotorWiFiScreen" },
-    { name: "Motor Driver", icon: "cogs", screen: "MotorDriverScreen" },
-    { name: "OLED Block", icon: "tv", screen: "OLEDBlockScreen" },
-  ];
+  { name: "RGB LED", image: RGBImage, screen: "RGBLEDScreen" },
+  { name: "Vibration Motor", image: vibrationImage, screen: "VibrationMotorScreen" },
+  { name: "Buzzer", image: buzzerImage, screen: "BuzzerScreen" },
+  { name: "Music", image: music, screen: "MusicScreen" }, // No image
+  { name: "Fan Block", image: fanImage, screen: "FanBlockScreen" },
+  { name: "Servo Motor / WiFi", image: servoImage, screen: "ServoMotorWiFiScreen" },
+  { name: "Motor Driver", image: motorImage, screen: "MotorDriverScreen" },
+  { name: "OLED Block", image: OLEDImage, screen: "OLEDBlockScreen" },
+];
 
 const OutputScreen: React.FC<AutomationScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollView}
-      >
-        <View style={styles.gridContainer}>
+      <View style={styles.centeredContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollView}
+        >
           {automationCategories.map((item, index) => (
             <TouchableOpacity
               key={index}
               style={styles.box}
               onPress={() => navigation.navigate(item.screen)}
             >
-              <Icon name={item.icon} size={40} color="#000000" style={styles.icon} />
+              {item.image ? (
+                <Image source={item.image} style={styles.image} />
+              ) : (
+                <Text>No Image</Text>
+              )}
               <Text style={styles.boxText} numberOfLines={2} adjustsFontSizeToFit>
                 {item.name}
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -47,46 +61,48 @@ const OutputScreen: React.FC<AutomationScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-start',
+    backgroundColor: '#6B8EDD',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 20,
+    paddingVertical: 20,
+  },
+  centeredContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
   },
   scrollView: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
-  },
-  gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    width: '100%',
+    paddingVertical: 40,
   },
   box: {
-    width: 180,
-    height: 240,
+    width: 286,
+    height: 260,
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 10,
-    marginVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#A5D6A7',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
+    marginHorizontal: 15,
+    borderRadius: 10,
+    backgroundColor: 'white',
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
   },
   boxText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#000000',
+    color: 'black',
     textAlign: 'center',
-    paddingHorizontal: 8,
+    marginTop: 12,
   },
-  icon: {
-    marginBottom: 12,
-    color: '#000000',
-    fontSize: 40,
+  image: {
+    width: '90%', // Adjust as needed
+    height: '70%', // Adjust as needed
+    resizeMode: 'contain', // or 'cover'
   },
 });
 

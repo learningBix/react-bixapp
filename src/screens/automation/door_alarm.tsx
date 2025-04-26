@@ -1,305 +1,346 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Switch, Dimensions, Button } from 'react-native';
-import Slider from '@react-native-community/slider';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Dimensions, 
+  TouchableOpacity,
+  SafeAreaView,
+  PanResponder
+} from 'react-native';
 import dgram from 'react-native-udp';
 import { Buffer } from 'buffer';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const ESP32_IP = '192.168.0.196'; // Change this to your ESP32 IP
+const ESP32_IP = 'esptest.local';
 const ESP32_PORT = 8888;
 
-export default function SmartIrrigation() {
+export default function MorningAlarm() {
+  const [darkThreshold, setDarkThreshold] = useState(0);
+  const [buzzerValue, setBuzzerValue] = useState(0);
   const [isOn, setIsOn] = useState(false);
-  const [lightIntensity, setLightIntensity] = useState(50);
-  const [buzzerTime, setBuzzerTime] = useState(50);
   const lastSentTime = useRef(0);
 
-  const sendUDPCommand = (light, buzzer) => {
+  const darknessSliderRef = useRef(null);
+  const buzzerSliderRef = useRef(null);
+
+  const [darknessSliderWidth, setDarknessSliderWidth] = useState(0);
+  const [buzzerSliderWidth, setBuzzerSliderWidth] = useState(0);
+
+  const sendUDPCommand = (darkness, buzzer) => {
     const now = Date.now();
     if (now - lastSentTime.current < 50) return;
     lastSentTime.current = now;
-
+  
     const client = dgram.createSocket('udp4');
-    const lightValue = Math.round(light);
-    const buzzerValue = Math.round(buzzer);
-    const message = Buffer.from([0xE3, lightValue, buzzerValue]);
-
+    const darknessValue = Math.round(darkness);
+    const buzzerVal = Math.round(buzzer);
+  
+    const message = Buffer.from([darkness === 0 && buzzer === 0 ? 0xC0 : 0xE1, darknessValue, buzzerVal]);
+  
     client.on('error', (err) => {
       console.error('UDP Socket Error:', err);
       client.close();
     });
-
+  
     client.bind(0, () => {
       client.send(message, 0, message.length, ESP32_PORT, ESP32_IP, (err) => {
         if (err) console.error('Send Error:', err);
         client.close();
       });
     });
-
-    console.log(`📡 Sent UDP: E3 ${lightValue} ${buzzerValue}`);
+  
+    console.log(`📡 Sent UDP: ${darkness === 0 && buzzer === 0 ? 'C0' : 'E3'} ${darknessValue} ${buzzerVal}`);
   };
-
-  const sendOffCommand = () => {
-    const now = Date.now();
-    if (now - lastSentTime.current < 50) return;
-    lastSentTime.current = now;
-
-    const client = dgram.createSocket('udp4');
-    const message = Buffer.from([0xD9]);
-
-    client.on('error', (err) => {
-      console.error('UDP Socket Error:', err);
-      client.close();
-    });
-
-    client.bind(0, () => {
-      client.send(message, 0, message.length, ESP32_PORT, ESP32_IP, (err) => {
-        if (err) console.error('Send Error:', err);
-        client.close();
-      });
-    });
-
-    console.log('📡 Sent UDP: D9');
-  };
-
+  
   const handleToggle = () => {
     const newState = !isOn;
     setIsOn(newState);
-    if (newState) {
-      sendUDPCommand(lightIntensity, buzzerTime);
-    } else {
-      sendOffCommand();
-    }
+  
+    const client = dgram.createSocket('udp4');
+    const darknessValue = Math.round(darkThreshold);
+    const buzzerVal = Math.round(buzzerValue);
+  
+    const message = newState
+      ? Buffer.from([0xE3, darknessValue, buzzerVal])  
+      : Buffer.from([0xC0]); 
+  
+    client.on('error', (err) => {
+      console.error('UDP Socket Error:', err);
+      client.close();
+    });
+  
+    client.bind(0, () => {
+      client.send(message, 0, message.length, ESP32_PORT, ESP32_IP, (err) => {
+        if (err) console.error('Send Error:', err);
+        client.close();
+      });
+    });
+  
+    console.log(`📡 Sent UDP: ${newState ? 'E0' : 'C0'} ${newState ? `${darknessValue} ${buzzerVal}` : ''}`);
   };
 
+  const updateDarkThreshold = (xPosition) => {
+    const relativeX = Math.max(0, Math.min(xPosition, darknessSliderWidth));
+    const newValue = Math.round((relativeX / darknessSliderWidth) * 100);
+    setDarkThreshold(newValue);
+  };
+
+  const updateBuzzerValue = (xPosition) => {
+    const relativeX = Math.max(0, Math.min(xPosition, buzzerSliderWidth));
+    const newValue = Math.round((relativeX / buzzerSliderWidth) * 100);
+    setBuzzerValue(newValue);
+  };
+
+  const darknessPanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (evt) => {
+      if (darknessSliderRef.current) {
+        darknessSliderRef.current.measure((fx, fy, width, height, px, py) => {
+          const touchX = evt.nativeEvent.locationX;
+          updateDarkThreshold(touchX);
+        });
+      }
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (darknessSliderRef.current) {
+        darknessSliderRef.current.measure((fx, fy, width, height, px, py) => {
+          const touchX = gestureState.moveX - px;
+          updateDarkThreshold(touchX);
+        });
+      }
+    },
+  });
+
+  const buzzerPanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (evt) => {
+      if (buzzerSliderRef.current) {
+        buzzerSliderRef.current.measure((fx, fy, width, height, px, py) => {
+          const touchX = evt.nativeEvent.locationX;
+          updateBuzzerValue(touchX);
+        });
+      }
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (buzzerSliderRef.current) {
+        buzzerSliderRef.current.measure((fx, fy, width, height, px, py) => {
+          const touchX = gestureState.moveX - px;
+          updateBuzzerValue(touchX);
+        });
+      }
+    },
+  });
+
   return (
-    <View style={styles.container}>
-      <View style={styles.controlsBox}>
-        <View style={styles.topRow}>
-          <View style={styles.controlGroup}>
-            <Text style={styles.label}>🚪 <Text style={styles.boldText}>Door Alarm {isOn ? 'ON' : 'OFF'}</Text></Text>
-            <Switch
-              trackColor={{ false: '#ff9999', true: '#99ff99' }}
-              thumbColor={'#ffffff'}
-              ios_backgroundColor="#3e3e3e"
-              onValueChange={handleToggle}
-              value={isOn}
-              style={styles.switch}
-            />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.contentContainer}>
+        <View style={styles.headerContainerWrapper}>
+          <View style={styles.headerContainer}>
+            <View style={styles.headerContent}>
+              {/* Changed the icon for the heading */}
+              <Icon name="bell" size={24} color="white" style={styles.iconMargin} />
+              <Text style={styles.headerText}>Door Alarm</Text>
+            </View>
           </View>
-          <Text style={[styles.icon, isOn && styles.activeIcon]}>🔔</Text>
         </View>
 
-        <View style={styles.controlGroup}>
-          <Text style={styles.label}>💡 Light Intensity: {lightIntensity}</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={100}
-            step={1}
-            value={lightIntensity}
-            onValueChange={setLightIntensity}
-            minimumTrackTintColor="#4CAF50"
-            maximumTrackTintColor="#A5D6A7"
-            thumbTintColor="#388E3C"
+        <View style={styles.controlsGrid}>
+          <View style={styles.controlsRow}>
+            <View style={styles.controlContainer}>
+              <View style={styles.labelRow}>
+                {/* Changed the icon for "Distance" */}
+                <Icon name="ruler" size={20} color="white" style={styles.iconMargin} />
+                <Text style={styles.labelText}>Distance</Text>
+                <View style={styles.valueDisplayContainer}>
+                  <Text style={styles.valueText}>{darkThreshold}</Text>
+                </View>
+              </View>
+              <View
+                style={styles.sliderContainer}
+                ref={darknessSliderRef}
+                onLayout={(event) => {
+                  const { width } = event.nativeEvent.layout;
+                  setDarknessSliderWidth(width);
+                }}
+                {...darknessPanResponder.panHandlers}
+              >
+                <View style={styles.slider}>
+                  <View style={[styles.sliderTrack, { width: `${darkThreshold}%` }]} />
+                  <View style={[styles.sliderThumb, { left: `${darkThreshold}%` }]} />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.controlContainer}>
+              <View style={styles.labelRow}>
+                {/* Changed the icon for "Buzzer" */}
+                <Icon name="volume-high" size={20} color="white" style={styles.iconMargin} />
+                <Text style={styles.labelText}>Buzzer</Text>
+                <View style={styles.valueDisplayContainer}>
+                  <Text style={styles.valueText}>{buzzerValue}</Text>
+                </View>
+              </View>
+              <View
+                style={styles.sliderContainer}
+                ref={buzzerSliderRef}
+                onLayout={(event) => {
+                  const { width } = event.nativeEvent.layout;
+                  setBuzzerSliderWidth(width);
+                }}
+                {...buzzerPanResponder.panHandlers}
+              >
+                <View style={styles.slider}>
+                  <View style={[styles.sliderTrack, { width: `${buzzerValue}%` }]} />
+                  <View style={[styles.sliderThumb, { left: `${buzzerValue}%` }]} />
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.setButton,
+            { backgroundColor: isOn ? '#F149A1' : '#F149A1' },
+          ]}
+          onPress={handleToggle}
+        >
+          <Icon
+            name={isOn ? 'power' : 'power-standby'}  
+            size={24}
+            color="white"
+            style={styles.iconMargin}
           />
-        </View>
-
-        <View style={styles.controlGroup}>
-          <Text style={styles.label}>⏲️ Buzzer: {buzzerTime}</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={100}
-            step={1}
-            value={buzzerTime}
-            onValueChange={setBuzzerTime}
-            minimumTrackTintColor="#2196F3"
-            maximumTrackTintColor="#90CAF9"
-            thumbTintColor="#1565C0"
-          />
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Set Values"
-            onPress={() => sendUDPCommand(lightIntensity, buzzerTime)}
-            color="#4CAF50"
-          />
-        </View>
-
+          <Text style={styles.buttonText}>{isOn ? 'ON' : 'OFF'}</Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#4B2E83',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
-    padding: 20,
   },
-  controlsBox: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
+  contentContainer: {
     width: width * 0.9,
+    padding: 20,
+    backgroundColor: '#673AB7',
+    borderRadius: 30,
+    alignItems: 'center',
+    position: 'relative',
   },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  headerContainerWrapper: {
+    position: 'absolute',
+    top: -25,
+    width: '100%',
     alignItems: 'center',
   },
-  controlGroup: {
-    marginVertical: 10,
+  headerContainer: {
+    alignItems: 'center',
   },
-  label: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#4A4A4A',
-    marginBottom: 10,
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F149A1',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 30,
   },
-  boldText: {
+  iconMargin: {
+    marginRight: 10,
+  },
+  headerText: {
+    color: 'white',
+    fontSize: 24,
     fontWeight: 'bold',
   },
-  switch: {
-    transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
+  controlsGrid: {
+    width: '100%',
+    marginTop: 30,
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  controlContainer: {
+    width: '48%',
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  labelText: {
+    color: 'white',
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  valueDisplayContainer: {
+    backgroundColor: '#F149A1',
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 'auto',
+  },
+  valueText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  sliderContainer: {
+    width: '100%',
+    height: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 5,
   },
   slider: {
     width: '100%',
-    height: 40,
+    height: 8,
+    backgroundColor: '#483285',
+    borderRadius: 4,
+    position: 'relative',
   },
-  icon: {
-    fontSize: 50,
-    opacity: 0.3,
+  sliderTrack: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#FFEB3B',
+    borderRadius: 4,
   },
-  activeIcon: {
-    opacity: 1,
-    color: '#2196F3',
-    textShadowColor: '#1565C0',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+  sliderThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'white',
+    position: 'absolute',
+    top: -6,
+    marginLeft: -10,
+    elevation: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  buttonContainer: {
-    marginTop: 20,
+  setButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 50,
+    borderRadius: 30,
+    marginTop: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import { View, Text, TouchableOpacity, StyleSheet, PermissionsAndroid } from 'react-native';
-// import Voice from '@react-native-voice/voice';
-
-// const SpeechToText = () => {
-//   const [isRecording, setIsRecording] = useState(false);
-//   const [recognizedText, setRecognizedText] = useState('');
-//   const [error, setError] = useState('');
-
-//   useEffect(() => {
-//     // Initialize voice recognition settings
-//     Voice.onSpeechStart = () => setIsRecording(true);
-//     Voice.onSpeechEnd = () => setIsRecording(false);
-//     Voice.onSpeechResults = (event) => {
-//       setRecognizedText(event.value[0]);
-//     };
-//     Voice.onSpeechError = (event) => {
-//       setError(event.error?.message);
-//     };
-
-//     // Request microphone permission on Android
-//     const requestPermission = async () => {
-//       try {
-//         await PermissionsAndroid.request(
-//           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-//           {
-//             title: 'Microphone Permission',
-//             message: 'This app needs access to your microphone',
-//             buttonNeutral: 'Ask Me Later',
-//             buttonNegative: 'Cancel',
-//             buttonPositive: 'OK',
-//           }
-//         );
-//       } catch (err) {
-//         setError(err.message);
-//       }
-//     };
-
-//     requestPermission();
-
-//     return () => {
-//       Voice.destroy().then(Voice.removeAllListeners);
-//     };
-//   }, []);
-
-//   const startRecording = async () => {
-//     try {
-//       setError('');
-//       await Voice.start('en-US');
-//     } catch (error) {
-//       setError(error.message);
-//     }
-//   };
-
-//   const stopRecording = async () => {
-//     try {
-//       await Voice.stop();
-//     } catch (error) {
-//       setError(error.message);
-//     }
-//   };
-
-//   return (
-//     <View style={styles.container}>
-//       <TouchableOpacity
-//         style={[styles.button, isRecording && styles.recording]}
-//         onPress={isRecording ? stopRecording : startRecording}
-//       >
-//         <Text style={styles.buttonText}>
-//           {isRecording ? 'Stop Recording' : 'Start Recording'}
-//         </Text>
-//       </TouchableOpacity>
-
-//       {recognizedText ? (
-//         <Text style={styles.text}>Recognized Text: {recognizedText}</Text>
-//       ) : null}
-
-//       {error ? <Text style={styles.error}>Error: {error}</Text> : null}
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     padding: 20,
-//   },
-//   button: {
-//     backgroundColor: '#007AFF',
-//     padding: 15,
-//     borderRadius: 10,
-//     marginBottom: 20,
-//   },
-//   buttonText: {
-//     color: 'white',
-//     fontSize: 16,
-//   },
-//   recording: {
-//     backgroundColor: '#FF3B30',
-//   },
-//   text: {
-//     fontSize: 16,
-//     marginTop: 20,
-//     textAlign: 'center',
-//   },
-//   error: {
-//     color: 'red',
-//     marginTop: 10,
-//   },
-// });
-
-// export default SpeechToText;

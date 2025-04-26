@@ -1,170 +1,269 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Switch, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import dgram from 'react-native-udp';
 import { Buffer } from 'buffer';
 
-const ESP32_IP = '192.168.0.196';
-const ESP32_PORT = 8888;
+// UDP Configuration
+const PORT = 8888;
+const HOST = 'esptest.local'; // Change this to match your ESP32 IP
 
-export default function MusicControl() {
+// Create and bind the UDP socket
+const socket = dgram.createSocket('udp4');
+
+socket.on('error', (err) => {
+  console.error('Socket error:', err);
+  socket.close();
+});
+
+socket.on('message', (msg, rinfo) => {
+  console.log(`Received message: ${msg} from ${rinfo.address}:${rinfo.port}`);
+});
+
+socket.bind(PORT, () => {
+  console.log(`Socket bound to port ${PORT}`);
+});
+
+// UDP Command Function
+function sendUDPCommand(commandByte, value) {
+  const message = Buffer.from([commandByte, value]);
+  socket.send(message, 0, message.length, PORT, HOST, (err) => {
+    if (err) {
+      console.error('UDP Send Error:', err);
+    } else {
+      console.log(`Message sent to ${HOST}:${PORT}`);
+    }
+  });
+}
+
+export default function LEDControl() {
   const [isOn, setIsOn] = useState(false);
   const [status, setStatus] = useState('Stopped');
-  const lastSentTime = useRef(0);
 
-  const sendUDPCommand = (command) => {
-    const now = Date.now();
-    if (now - lastSentTime.current < 50) return;
-    lastSentTime.current = now;
-
-    const client = dgram.createSocket('udp4');
-    const message = Buffer.from([0xD4, command]);
-
-    client.on('error', (err) => {
-      console.error('UDP Error:', err);
-      client.close();
-    });
-
-    client.bind(0, () => {
-      client.send(
-        message,
-        0,
-        message.length,
-        ESP32_PORT,
-        ESP32_IP,
-        (err) => {
-          if (err) console.error('Send Failed:', err);
-          client.close();
-        }
-      );
-    });
+  const handlePowerOn = () => {
+    setIsOn(true);
+    // Send power on command - using 0xA0 as the command byte for power
+    sendUDPCommand(0xA0, 1);
   };
 
-  const toggleSwitch = () => {
-    const newState = !isOn;
-    setIsOn(newState);
-    sendUDPCommand(newState ? 1 : 0); // D41 for on, D40 for off
-    if (!newState) setStatus('Stopped');
+  const handlePowerOff = () => {
+    setIsOn(false);
+    setStatus('Stopped');
+    // Send power off command
+ 
   };
 
   const handlePlay = () => {
-    setStatus('Playing');
-    sendUDPCommand(2); // D42 for play
+    if (isOn) {
+      setStatus('Playing');
+      // Send play command - using 0xB1 as the command byte for play
+      sendUDPCommand(0xD4, 1);
+    }
   };
 
   const handleStop = () => {
     setStatus('Stopped');
-    sendUDPCommand(3); // D43 for stop
+    // Send stop command - using 0xB2 as the command byte for stop
+    sendUDPCommand(0xC0, 0);
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.controlsBox}>
-        <View style={styles.powerRow}>
-          <Text style={styles.label}>🔌 Power {isOn ? 'ON' : 'OFF'}</Text>
-          <Text style={styles.statusText}>
-            {status === 'Playing' ? '🎶 Now Playing' : '⏹ Stopped'}
-          </Text>
+      <View style={styles.controlsWrapper}>
+        <View style={styles.headerPill}>
+          <Icon name="lightbulb" size={24} color="white" />
+          <Text style={styles.headerText}>Music</Text>
         </View>
-        <Switch
-          trackColor={{ false: '#ff9999', true: '#99ff99' }}
-          thumbColor={'#ffffff'}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={toggleSwitch}
-          value={isOn}
-          style={styles.switch}
-        />
-        
-        <View style={styles.controlGroup}>
-          <Text style={styles.label}>🎚 Controls</Text>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.playButton, !isOn && styles.disabled]}
-              onPress={handlePlay}
-              disabled={!isOn}
-            >
-              <Text style={styles.buttonText}>▶ PLAY</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.stopButton]}
-              onPress={handleStop}
-            >
-              <Text style={styles.buttonText}>STOP</Text>
-            </TouchableOpacity>
+
+        <View style={styles.controlsContainer}>
+          <View style={styles.controlRow}>
+            {/* Power Section */}
+            <View style={styles.powerSection}>
+              <Text style={styles.sectionTitle}>
+                <Icon name="power-settings-new" size={18} color="#ffeb3b" /> Power button
+              </Text>
+              <View style={styles.powerButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.smallButton, isOn && styles.activeButton]}
+                  onPress={handlePowerOn}
+                >
+                  <Icon name="toggle-on" size={16} color="white" />
+                  <Text style={styles.smallButtonText}>ON</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.smallButton, !isOn && styles.activeButton]}
+                  onPress={handlePowerOff}
+                >
+                  <Icon name="toggle-off" size={16} color="white" />
+                  <Text style={styles.smallButtonText}>OFF</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Controls Section - replacing the brightness slider */}
+            <View style={styles.controlsSection}>
+              <Text style={styles.sectionTitle}>
+                <Icon name="music-note" size={18} color="#ffeb3b" /> Controls
+              </Text>
+              <View style={styles.controlsButtonRow}>
+                <TouchableOpacity
+                  style={[styles.controlButton, styles.playButton, !isOn && styles.disabledButton]}
+                  onPress={handlePlay}
+                  disabled={!isOn}
+                >
+                  <Icon name="play-arrow" size={24} color="white" />
+                  <Text style={styles.controlButtonText}>Play</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.controlButton, styles.stopButton]}
+                  onPress={handleStop}
+                >
+                  <Icon name="stop" size={24} color="white" />
+                  <Text style={styles.controlButtonText}>Stop</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
+          
+          {/* Status Display */}
+          {/* <View style={styles.statusContainer}>
+            <Text style={styles.statusText}>Status: {status}</Text>
+          </View> */}
         </View>
       </View>
     </View>
   );
 }
 
-const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#4a148c',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#e3f2fd',
-    padding: 20,
+    padding: 30,
   },
-  controlsBox: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
-    width: width * 0.9,
-  },
-  powerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  controlsWrapper: {
+    width: '100%',
     alignItems: 'center',
-    marginBottom: 10,
+    position: 'relative',
   },
-  controlGroup: {
-    marginVertical: 10,
+  headerPill: {
+    position: 'absolute',
+    top: -20,
+    backgroundColor: '#f06292',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 30,
+    elevation: 5,
+    zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  label: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#4a4a4a',
-    marginBottom: 10,
-    fontFamily: 'Arial Rounded MT Bold',
+  headerText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  switch: {
-    alignSelf: 'flex-start',
-    marginVertical: 10,
+  controlsContainer: {
+    backgroundColor: '#673ab7',
+    borderRadius: 30,
+    padding: 30,
+    width: '100%',
+    elevation: 5,
+    paddingTop: 40,
+    alignItems: 'center',
   },
-  buttonContainer: {
+  controlRow: {
+    flexDirection: 'row',
+    gap: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  powerSection: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 150,
+  },
+  powerButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10,
+  },
+  smallButton: {
+    backgroundColor: '#f06292',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    elevation: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  smallButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  activeButton: {
+    backgroundColor: '#e91e63',
+  },
+  controlsSection: {
+    flex: 2,
+    height: 190,
+    justifyContent: 'center',
+  },
+  sectionTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  controlsButtonRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 10,
+    gap: 15,
   },
-  button: {
-    paddingVertical: 15,
-    paddingHorizontal: 30,
+  controlButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 20,
-    minWidth: 120,
+    elevation: 3,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    flex: 1,
+    gap: 8,
   },
   playButton: {
-    backgroundColor: '#00e676',
+    backgroundColor: '#34e8f0', // Cyan/Turquoise
   },
   stopButton: {
-    backgroundColor: '#ff5252',
+    backgroundColor: '#ff5050', // Red/Coral
   },
-  disabled: {
+  controlButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  disabledButton: {
     opacity: 0.5,
-    backgroundColor: '#666',
   },
-  buttonText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
-    fontFamily: 'Arial Rounded MT Bold',
+  statusContainer: {
+    marginTop: 20,
+    alignItems: 'center',
   },
   statusText: {
+    color: 'white',
     fontSize: 16,
-    color: '#666',
-    fontStyle: 'italic',
+    fontWeight: 'bold',
   },
 });

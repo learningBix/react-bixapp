@@ -1,49 +1,51 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 
 interface AutomationScreenProps {
   navigation: any;
 }
 
 const automationCategories = [
-  { name: "Night Lamp", icon: "lightbulb-o", screen: "NightLamp" },
-  { name: "Morning Alarm", icon: "bell", screen: "MorningAlarmScreen" },
-  { name: "Smart Irrigation System", icon: "tint", screen: "SmartIrrigationScreen" },
-  { name: "Door Alarm", icon: "exclamation-triangle", screen: "DoorAlarmScreen" },
-  { name: "Water Overflow Indication", icon: "tint", screen: "WaterOverflowScreen" },
-  { name: "Pet Feeder", icon: "cutlery", screen: "PetFeederScreen" },
-  { name: "Person Counter", icon: "users", screen: "PersonCounterScreen" },
-  { name: "Home Security System", icon: "shield", screen: "HomeSecurityScreen" },
-  { name: "Liquid Dispenser", icon: "flask", screen: "LiquidDispenserScreen" },
-  // { name: "Indoor Plant Moisture Monitor", icon: "leaf", screen: "PlantMonitorScreen" },
-  // { name: "Wireless Door Lock System", icon: "lock", screen: "DoorLockScreen" },
-  // { name: "Smart Gardening Pot", icon: "pagelines", screen: "SmartGardeningScreen" },
+  { name: 'Night Lamp', image: require('../../main/smartLamp.jpg'), screen: 'NightLamp' },
+  { name: 'Morning Alarm', image: require('../../main/MorningAlarm.png'), screen: 'MorningAlarmScreen' },
+  { name: 'Smart Irrigation System', image: require('../../main/SmartIrigation.jpg'), screen: 'SmartIrrigationScreen' },
+  { name: 'Door Alarm', image: require('../../main/doorAlarm.jpg'), screen: 'DoorAlarmScreen' },
+  { name: 'Water Overflow Indication', image: require('../../main/WaterOverflow.jpg'), screen: 'WaterOverflowScreen' },
+  { name: 'Pet Feeder', image: require('../../main/pet_feeder.jpg'), screen: 'PetFeederScreen' },
+  { name: 'Person Counter', image: require('../../main/perosonCounter.jpg'), screen: 'PersonCounterScreen' },
+  // { name: 'Home Security System', image: require('../../main/perosonCounter.jpg'), screen: 'HomeSecurityScreen' },
+  { name: 'Liquid Dispenser', image: require('../../main/Liquidispenser.jpg'), screen: 'LiquidDispenserScreen' },
 ];
 
 const AutomationScreen: React.FC<AutomationScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollView}
-      >
-        <View style={styles.gridContainer}>
+      <View style={styles.centeredContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollView}
+        >
           {automationCategories.map((item, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.box}
               onPress={() => navigation.navigate(item.screen)}
+              style={styles.box}
             >
-              <Icon name={item.icon} size={40} color="#000000" style={styles.icon} />
-              <Text style={styles.boxText} numberOfLines={2} adjustsFontSizeToFit>
-                {item.name}
-              </Text>
+              <Image source={item.image} style={styles.image} />
+              <Text style={styles.boxText}>{item.name}</Text>
             </TouchableOpacity>
           ))}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -51,46 +53,49 @@ const AutomationScreen: React.FC<AutomationScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-start',
+    backgroundColor: '#6B8EDD',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 20,
+    paddingVertical: 20,
+  },
+  centeredContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
   },
   scrollView: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
-  },
-  gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    width: '100%',
+    paddingVertical: 40,
   },
   box: {
-    width: 180,
-    height: 240,
+    width: 286,
+    height: 260,
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 10,
-    marginVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#A5D6A7',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
+    marginHorizontal: 15,
+    borderRadius: 10,
+    backgroundColor: 'white',
+    padding: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
   },
   boxText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#000000',
+    color: 'black',
     textAlign: 'center',
-    paddingHorizontal: 8,
+    marginTop: 8,
   },
-  icon: {
-    marginBottom: 12,
-    color: '#000000',
-    fontSize: 40,
+  image: {
+    width: '95%',
+    height: '80%',
+    borderRadius: 5,
+    resizeMode: 'cover',
   },
 });
 

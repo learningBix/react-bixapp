@@ -1,6 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Animated } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { ScrollView, View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../App';
 
@@ -9,23 +8,17 @@ type HomeScreenProps = {
 };
 
 const categories = [
-    "Structure", "Automation", "AI", "Robotic car",
-    "Server", "Input", "Output", "Sensor"
-];
-
-const categoryIcons = [
-    "building",
-    "cogs",
-    "lightbulb-o",
-    "car",
-    "server",
-    "keyboard-o",
-    "arrow-up",
-    "lightbulb-o"
+    { name: "Structure", image: require('../../structure/Structure.jpg') },
+    { name: "Automation", image: require('../../structure/Automation.png') },
+    { name: "AI", image: require('../../structure/AI.jpg') },
+    { name: "Robotic Car", image: require('../../structure/robotic_car.jpg') },
+    { name: "Sensors", image: require('../../structure/Sensor.jpg') },
+    { name: "Input", image: require('../../structure/input.png') },
+    { name: "Output", image: require('../../structure/output.png') },
+    { name: "Server", image: require('../../structure/server.png') }
 ];
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-    const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
     const handleNavigation = (category: string) => {
         switch (category) {
@@ -38,14 +31,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             case "Output":
                 navigation.navigate('OutputScreen');
                 break;
-            case "Robotic car":
+            case "Robotic Car":
                 navigation.navigate('Roboticsscreen');
                 break;
             case "Input":
                 navigation.navigate('InputHiveStatus');
                 break;
-            case "Sensor":
+            case "Sensors":
                 navigation.navigate('SensorHiveStatus');
+                break;
+            case "AI":
+                navigation.navigate('AIScreen');
                 break;
             default:
                 console.log("No screen assigned for this category");
@@ -55,23 +51,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.scrollView}
-            >
-                {categories.map((item, index) => (
-                    <Animated.View key={index} style={[styles.box, { transform: [{ scale: scaleAnim }] }]}>
-                        <TouchableOpacity
-                            onPress={() => handleNavigation(item)}
-                            style={styles.touchable}
-                        >
-                            <Icon name={categoryIcons[index]} size={40} color="black" style={styles.icon} />
-                            <Text style={styles.boxText} numberOfLines={2} adjustsFontSizeToFit>{item}</Text>
+            <View style={styles.centeredContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollView}
+                >
+                    {categories.map((item, index) => (
+                        <TouchableOpacity key={index} onPress={() => handleNavigation(item.name)} style={styles.box}>
+                            <Image source={item.image} style={styles.image} />
+                            <Text style={styles.boxText}>{item.name}</Text>
                         </TouchableOpacity>
-                    </Animated.View>
-                ))}
-            </ScrollView>
+                    ))}
+                </ScrollView>
+            </View>
         </SafeAreaView>
     );
 };
@@ -79,43 +72,50 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'white',
-        padding: 20,
+        backgroundColor: '#6B8EDD',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        paddingVertical: 20,
+    },
+    centeredContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        width: '100%',
     },
     scrollView: {
         flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
         paddingVertical: 40,
     },
     box: {
-        width: 250,
-        height: 250,
+        width: 286, 
+        height: 260, 
         justifyContent: 'center',
         alignItems: 'center',
-        marginHorizontal: 20,
-        marginBottom: 30,
-        borderRadius: 30,
-        backgroundColor: '#a5d6a7',
+        marginHorizontal: 15, 
+        borderRadius: 10,
+        backgroundColor: 'white',
+        padding: 5, // Reduced padding to minimize space around image
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 5,
     },
     boxText: {
-        fontSize: 28,
+        fontSize: 18, // Slightly reduced for better fit
         fontWeight: 'bold',
         color: 'black',
         textAlign: 'center',
-        paddingHorizontal: 10,
+        marginTop: 8, // Reduced margin to keep text closer to image
     },
-    icon: {
-        marginBottom: 15,
-        fontSize: 50,
-        color: 'black'
-    },
-    touchable: {
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 30
-    },
+    image: {
+        width: "95%", // Making the image take up almost full width
+        height: "80%", // Making the image taller
+        borderRadius: 5,
+        resizeMode: 'cover', // Ensures image fills space properly
+    }
 });
 
 export default HomeScreen;

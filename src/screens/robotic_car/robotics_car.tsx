@@ -1,268 +1,11 @@
-// import React, { useState, useRef, useEffect } from 'react';
-// import {
-//   View,
-//   StyleSheet,
-//   TouchableOpacity,
-//   Dimensions,
-//   ImageBackground,
-//   SafeAreaView,
-//   Platform,
-// } from 'react-native';
-// import Icon from 'react-native-vector-icons/Ionicons';
-// import dgram from 'react-native-udp';
-// import { Buffer } from 'buffer';
-// import { WebView } from 'react-native-webview';
-
-// const { width, height } = Dimensions.get('window');
-
-// const ESP32_IP = '192.168.0.101'; // Change to your ESP32 IP
-// const ESP32_PORT = 8888;
-// const COMMAND_STOP = 0xB0;
-// const COMMANDS = {
-//   forward: 0xB1,
-//   backward: 0xB2,
-//   left: 0xB3,
-//   right: 0xB4,
-// };
-
-// // Replace with the URL of your video stream
-// const STREAM_URL = 'http://192.168.0.196:81/stream';
-
-// export default function RoboticCarController() {
-//   const [isMoving, setIsMoving] = useState(false);
-//   const [activeDirection, setActiveDirection] = useState(null);
-//   const lastSentTime = useRef(0);
-
-//   const sendUDPCommand = command => {
-//     const now = Date.now();
-//     if (now - lastSentTime.current < 50) return;
-//     lastSentTime.current = now;
-
-//     const client = dgram.createSocket('udp4');
-//     const message = Buffer.from([command]);
-
-//     client.on('error', err => {
-//       console.error('UDP Error:', err);
-//       client.close();
-//     });
-
-//     client.bind(0, () => {
-//       client.send(message, 0, message.length, ESP32_PORT, ESP32_IP, err => {
-//         if (err) console.error('Send Error:', err);
-//         client.close();
-//       });
-//     });
-
-//     console.log(`📡 Sent command: 0x${command.toString(16).toUpperCase()}`);
-//   };
-
-//   const handleDirectionPress = direction => {
-//     setActiveDirection(direction);
-//     sendUDPCommand(COMMANDS[direction]);
-//   };
-
-//   const handleDirectionRelease = () => {
-//     setActiveDirection(null);
-//     sendUDPCommand(COMMAND_STOP);
-//   };
-
-//   const toggleMovement = () => {
-//     const newIsMoving = !isMoving;
-//     setIsMoving(newIsMoving);
-//   };
-
-//   useEffect(() => {
-//     if (!isMoving) {
-//       sendUDPCommand(COMMAND_STOP);
-//     }
-//   }, [isMoving]);
-
-//   const DirectionButton = ({ direction, icon }) => (
-//     <TouchableOpacity
-//       style={[
-//         styles.directionButton,
-//         styles[`${direction}Button`],
-//         activeDirection === direction && styles.activeDirection,
-//       ]}
-//       onPressIn={() => handleDirectionPress(direction)}
-//       onPressOut={handleDirectionRelease}
-//     >
-//       <Icon name={icon} size={40} color="#FFFFFF" />
-//     </TouchableOpacity>
-//   );
-
-//   return (
-//     <SafeAreaView style={styles.safeArea}>
-//       <ImageBackground
-//         source={require('./assets/cartoon-road.jpg')}
-//         style={styles.container}
-//         resizeMode="cover"
-//       >
-//         <View style={styles.rowContainer}>
-//           {/* Video Stream Section */}
-//           <View style={styles.videoContainer}>
-//             <WebView
-//               source={{ uri: STREAM_URL }}
-//               style={styles.videoStream}
-//               onError={error => {
-//                 console.error('WebView Error:', error);
-//                 if (error.nativeEvent && error.nativeEvent.description) {
-//                   console.error('WebView Error Description:', error.nativeEvent.description);
-//                 }
-//               }}
-//               javaScriptEnabled={Platform.OS === 'android'} // Enable JavaScript for Android
-//             />
-//           </View>
-
-//           {/* Spacing */}
-//           <View style={{ width: 10 }} />
-
-//           {/* Controls Section */}
-//           <View style={styles.controlsContainer}>
-//             {/* Directional Controls */}
-//             <View style={styles.directionalControls}>
-//               {/* Update directional controls to use DirectionButton */}
-//               <DirectionButton direction="forward" icon="arrow-up" />
-
-//               <View style={styles.horizontalControls}>
-//                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-start' }}>
-//                   <DirectionButton direction="left" icon="arrow-back" />
-//                 </View>
-
-//                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-//                   <TouchableOpacity
-//                     style={[
-//                       styles.directionButton,
-//                       isMoving
-//                         ? styles.startStopButtonActive
-//                         : styles.startStopButtonInactive,
-//                     ]}
-//                     onPress={toggleMovement}
-//                   >
-//                     <Icon name={isMoving ? 'pause' : 'play'} size={40} color="#FFFFFF" />
-//                   </TouchableOpacity>
-//                 </View>
-
-//                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
-//                   <DirectionButton direction="right" icon="arrow-forward" />
-//                 </View>
-//               </View>
-
-//               <DirectionButton direction="backward" icon="arrow-down" />
-//             </View>
-//           </View>
-//         </View>
-//       </ImageBackground>
-//     </SafeAreaView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   safeArea: {
-//     flex: 1,
-//     backgroundColor: '#f0f0f0',
-//   },
-//   container: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     paddingHorizontal: 10,
-//     paddingVertical: 20,
-//   },
-//   rowContainer: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-around',
-//     alignItems: 'center',
-//     marginHorizontal: 10,
-//   },
-//   videoContainer: {
-//     backgroundColor: 'rgba(255,255,255,0.9)',
-//     borderRadius: 15,
-//     paddingHorizontal: 20,
-//     paddingVertical: 15,
-//     width: width * 0.55,
-//     height: height * 0.75,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   videoStream: {
-//     width: width * 0.5,
-//     height: height * 0.65,
-//     borderRadius: 10,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     marginTop: 5,
-//   },
-//   videoPlaceholder: {
-//     fontSize: 24,
-//     fontFamily: 'Comic Sans MS',
-//     color: '#2F4F4F',
-//   },
-//   offCameraView: {
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   offCameraText: {
-//     fontSize: 18,
-//     color: '#2F4F4F',
-//     marginTop: 10,
-//   },
-//   controlsContainer: {
-//     backgroundColor: 'rgba(255,255,255,0.8)',
-//     borderRadius: 30,
-//     paddingHorizontal: 10,
-//     paddingVertical: 10,
-//     width: width * 0.3,
-//     alignItems: 'center',
-//     justifyContent: 'space-around',
-//     height: height * 0.75,
-//   },
-//   directionalControls: {
-//     alignItems: 'center',
-//     justifyContent: 'space-around',
-//     height: height * 0.55,
-//   },
-//   directionButton: {
-//     padding: 10,
-//     borderRadius: 15,
-//     margin: 2,
-//     alignItems: 'center',
-//     borderWidth: 1,
-//     justifyContent: 'center',
-//   },
-//   forwardButton: { backgroundColor: '#6495ED', borderColor: '#1E90FF' },
-//   backwardButton: { backgroundColor: '#FFC0CB', borderColor: '#DC143C' },
-//   leftButton: { backgroundColor: '#87CEEB', borderColor: '#1E90FF' },
-//   rightButton: { backgroundColor: '#FFA07A', borderColor: '#FF4500' },
-//   startStopButtonActive: { backgroundColor: '#32CD32', borderColor: '#228B22' },
-//   startStopButtonInactive: { backgroundColor: '#FF3737', borderColor: '#FF0000' },
-//   activeDirection: {
-//     transform: [{ scale: 1.05 }],
-//     elevation: 5,
-//   },
-//   horizontalControls: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     width: '100%',
-//   },
-// });
-
-
-
-
-
-
-
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  ImageBackground,
   SafeAreaView,
-  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import dgram from 'react-native-udp';
@@ -271,7 +14,7 @@ import { WebView } from 'react-native-webview';
 
 const { width, height } = Dimensions.get('window');
 
-const ESP32_IP = '192.168.0.101'; // Change to your ESP32 IP
+const ESP32_IP = 'esptest.local';
 const ESP32_PORT = 8888;
 const COMMAND_STOP = 0xB0;
 const COMMANDS = {
@@ -281,21 +24,20 @@ const COMMANDS = {
   right: 0xB4,
 };
 
-// Replace with the URL of your video stream
-const STREAM_URL = 'http://192.168.0.196:81/stream';
+const STREAM_URL = `http://${ESP32_IP}:81/stream`;
 
 export default function RoboticCarController() {
-  const [isMoving, setIsMoving] = useState(false);
+  const [isOn, setIsOn] = useState(true);
   const [activeDirection, setActiveDirection] = useState(null);
   const lastSentTime = useRef(0);
 
-  const sendUDPCommand = command => {
+  const sendUDPCommand = (cmd) => {
     const now = Date.now();
     if (now - lastSentTime.current < 50) return;
     lastSentTime.current = now;
 
     const client = dgram.createSocket('udp4');
-    const message = Buffer.from([command]);
+    const message = Buffer.from([cmd]);
 
     client.on('error', err => {
       console.error('UDP Error:', err);
@@ -308,107 +50,78 @@ export default function RoboticCarController() {
         client.close();
       });
     });
-
-    console.log(`📡 Sent command: 0x${command.toString(16).toUpperCase()}`);
   };
 
-  const handleDirectionPress = direction => {
-    setActiveDirection(direction);
-    sendUDPCommand(COMMANDS[direction]);
+  const handleDirectionPress = (dir) => {
+    setActiveDirection(dir);
+    sendUDPCommand(COMMANDS[dir]);
   };
-
   const handleDirectionRelease = () => {
     setActiveDirection(null);
     sendUDPCommand(COMMAND_STOP);
   };
-
-  const toggleMovement = () => {
-    const newIsMoving = !isMoving;
-    setIsMoving(newIsMoving);
+  const togglePower = () => {
+    setIsOn(on => !on);
+    if (!isOn) sendUDPCommand(COMMAND_STOP);
   };
 
-  useEffect(() => {
-    if (!isMoving) {
-      sendUDPCommand(COMMAND_STOP);
-    }
-  }, [isMoving]);
-
-  const DirectionButton = ({ direction, icon }) => (
+  const ControlButton = ({ direction, icon }) => (
     <TouchableOpacity
       style={[
-        styles.directionButton,
-        styles[`${direction}Button`],
-        activeDirection === direction && styles.activeDirection,
+        styles.controlButton,
+        activeDirection === direction && styles.controlButtonActive
       ]}
       onPressIn={() => handleDirectionPress(direction)}
       onPressOut={handleDirectionRelease}
     >
-      <Icon name={icon} size={40} color="#FFFFFF" />
+      <Icon name={icon} size={36} color="#FFFFFF" />
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ImageBackground
-        source={require('./assets/cartoon-road.jpg')}
-        style={styles.container}
-        resizeMode="cover"
-      >
-        <View style={styles.rowContainer}>
-          {/* Video Stream Section */}
-          <View style={styles.videoContainer}>
-            <WebView
-              source={{ uri: STREAM_URL }}
-              style={styles.videoStream}
-              onError={error => {
-                console.error('WebView Error:', error);
-                if (error.nativeEvent && error.nativeEvent.description) {
-                  console.error('WebView Error Description:', error.nativeEvent.description);
-                }
-              }}
-              javaScriptEnabled={Platform.OS === 'android'} // Enable JavaScript for Android
-            />
-          </View>
+      <View style={styles.container}>
 
-          {/* Spacing */}
-          <View style={{ width: 10 }} />
-
-          {/* Controls Section */}
-          <View style={styles.controlsContainer}>
-            {/* Directional Controls */}
-            <View style={styles.directionalControls}>
-              {/* Update directional controls to use DirectionButton */}
-              <DirectionButton direction="forward" icon="arrow-up" />
-
-              <View style={styles.horizontalControls}>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-start' }}>
-                  <DirectionButton direction="left" icon="arrow-back" />
-                </View>
-
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                  <TouchableOpacity
-                    style={[
-                      styles.directionButton,
-                      isMoving
-                        ? styles.startStopButtonActive
-                        : styles.startStopButtonInactive,
-                    ]}
-                    onPress={toggleMovement}
-                  >
-                    <Icon name={isMoving ? 'pause' : 'play'} size={40} color="#FFFFFF" />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
-                  <DirectionButton direction="right" icon="arrow-forward" />
-                </View>
-              </View>
-
-              <DirectionButton direction="backward" icon="arrow-down" />
-            </View>
+        {/* Left Controls */}
+        <View style={styles.sidePanel}>
+          <View style={styles.horizontalButtons}>
+            <ControlButton direction="left" icon="chevron-back" />
+            <View style={{ width: 20 }} />
+            <ControlButton direction="right" icon="chevron-forward" />
           </View>
         </View>
-      </ImageBackground>
+
+        {/* Center Stream + Power */}
+        <View style={styles.streamContainer}>
+          <View style={styles.streamPanelOuter}>
+            <View style={styles.streamPanelInner}>
+              {isOn ? (
+                <WebView
+                  source={{ uri: STREAM_URL }}
+                  style={styles.streamView}
+                  javaScriptEnabled
+                  domStorageEnabled
+                />
+              ) : (
+                <View style={styles.streamPlaceholder}>
+                  <Text style={styles.streamText}>Stream Here</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.powerButton} onPress={togglePower}>
+            <Text style={styles.powerButtonText}>{isOn ? 'ON' : 'OFF'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Right Controls */}
+        <View style={styles.sidePanel}>
+          <ControlButton direction="forward" icon="chevron-up" />
+          <View style={{ height: 40 }} />
+          <ControlButton direction="backward" icon="chevron-down" />
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -416,89 +129,107 @@ export default function RoboticCarController() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#4A237A',
   },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 20,
-  },
-  rowContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
-    marginHorizontal: 10,
-  },
-  videoContainer: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 15,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    width: width * 0.55,
-    height: height * 0.75,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  videoStream: {
-    width: width * 0.5,
-    height: height * 0.65,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 5,
-  },
-  videoPlaceholder: {
-    fontSize: 24,
-    fontFamily: 'Comic Sans MS',
-    color: '#2F4F4F',
-  },
-  offCameraView: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  offCameraText: {
-    fontSize: 18,
-    color: '#2F4F4F',
-    marginTop: 10,
-  },
-  controlsContainer: {
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderRadius: 30,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    width: width * 0.3,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    height: height * 0.75,
-  },
-  directionalControls: {
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    height: height * 0.55,
-  },
-  directionButton: {
-    padding: 10,
-    borderRadius: 15,
-    margin: 2,
-    alignItems: 'center',
-    borderWidth: 1,
-    justifyContent: 'center',
-  },
-  forwardButton: { backgroundColor: '#6495ED', borderColor: '#1E90FF' },
-  backwardButton: { backgroundColor: '#FFC0CB', borderColor: '#DC143C' },
-  leftButton: { backgroundColor: '#87CEEB', borderColor: '#1E90FF' },
-  rightButton: { backgroundColor: '#FFA07A', borderColor: '#FF4500' },
-  startStopButtonActive: { backgroundColor: '#32CD32', borderColor: '#228B22' },
-  startStopButtonInactive: { backgroundColor: '#FF3737', borderColor: '#FF0000' },
-  activeDirection: {
-    transform: [{ scale: 1.05 }],
-    elevation: 5,
-  },
-  horizontalControls: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  sidePanel: {
+    width: width * 0.22,
+    height: height * 0.45,           // ↑ bumped from 0.4 → 0.45
+    backgroundColor: '#6D55B0',
+    borderRadius: 30,
+    justifyContent: 'center',
     alignItems: 'center',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 13.84,
+  },
+  horizontalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  streamContainer: {
+    flex: 3,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  streamPanelOuter: {
+    width: width * 0.50,
+    height: height * 0.75,           // ↑ bumped from 0.65 → 0.75
+    backgroundColor: '#E84B8A',
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 15,
+    elevation: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.38,
+    shadowRadius: 16.00,
+    overflow: 'hidden',
+  },
+  streamPanelInner: {
+    flex: 1,
     width: '100%',
+    backgroundColor: 'white',
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  streamView: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  streamPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  streamText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#193498',
+  },
+  powerButton: {
+    position: 'absolute',
+    bottom: -20,
+    alignSelf: 'center',
+    backgroundColor: '#E84B8A',
+    paddingHorizontal: 36,
+    paddingVertical: 7,
+    borderRadius: 20,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.34,
+    shadowRadius: 6.27,
+  },
+  powerButtonText: {
+    color: 'white',
+    fontSize: 26,
+    fontWeight: 'bold',
+  },
+  controlButton: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#52CADE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.29,
+    shadowRadius: 4.65,
+  },
+  controlButtonActive: {
+    backgroundColor: '#34A0A4',
   },
 });

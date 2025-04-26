@@ -1,381 +1,347 @@
-// import React, { useState, useRef } from "react";
-// import { View, StyleSheet, ScrollView } from "react-native";
-// import { Button, Text, Surface } from "react-native-paper";
-// import Slider from "@react-native-community/slider";
-// import dgram from "react-native-udp";
-// import { Buffer } from "buffer";
-
-// const ESP32_IP = "192.168.0.196"; // Change this to match your ESP32 IP
-// const ESP32_PORT = 8888;
-
-// const SmartIrrigation = () => {
-//   const [isToggled, setIsToggled] = useState(false);
-//   const [soilMoisture, setSoilMoisture] = useState(500);
-//   const [dispenseTime, setDispenseTime] = useState(500);
-//   const [locked, setLocked] = useState(false);
-//   const lastSentTime = useRef(0);
-
-//   const sendUDPCommand = (command, moisture, time) => {
-//     const now = Date.now();
-//     if (now - lastSentTime.current < 50) return; // Prevent spamming
-//     lastSentTime.current = now;
-
-//     const client = dgram.createSocket("udp4");
-//     const moistureValue = Math.round(moisture);
-//     const timeValue = Math.round(time);
-//     const message = Buffer.from([command, moistureValue, timeValue]);
-
-//     client.on("error", (err) => {
-//       console.error("UDP Socket Error:", err);
-//       client.close();
-//     });
-
-//     client.bind(0, () => {
-//       client.send(message, 0, message.length, ESP32_PORT, ESP32_IP, (err) => {
-//         if (err) console.error("Send Error:", err);
-//         client.close();
-//       });
-//     });
-
-//     console.log(`📡 Sent UDP: ${command.toString(16).toUpperCase()} ${moistureValue} ${timeValue}`);
-//   };
-
-//   const handleToggle = () => {
-//     const newState = !isToggled;
-//     setIsToggled(newState);
-//     if (newState) {
-//       sendUDPCommand(0xE2, soilMoisture, dispenseTime); // Send E2 when ON
-//     } else {
-//       sendUDPCommand(0xD9, 0, 0); // Send D9 when OFF
-//     }
-//   };
-
-//   const handleSetValues = () => {
-//     setLocked((prev) => !prev);
-//     if (!locked) sendUDPCommand(0xE2, soilMoisture, dispenseTime);
-//   };
-
-//   return (
-//     <ScrollView contentContainerStyle={styles.scrollContainer}>
-//       <Surface style={styles.container}>
-//         <Text style={styles.title}>Smart Irrigation System</Text>
-
-//         <Button
-//           mode="contained"
-//           onPress={handleToggle}
-//           style={[styles.toggleButton, isToggled ? styles.buttonOn : styles.buttonOff]}
-//           labelStyle={styles.buttonText}
-//         >
-//           {isToggled ? "Turn Off" : "Turn On"}
-//         </Button>
-
-//         <View style={styles.sliderGroup}>
-//           <Text style={styles.label}>Soil Moisture Level: {soilMoisture}ms</Text>
-//           <Slider
-//             style={styles.slider}
-//             minimumValue={0}
-//             maximumValue={2000}
-//             value={soilMoisture}
-//             onValueChange={(value) => !locked && setSoilMoisture(value)}
-//             minimumTrackTintColor="#4CAF50"
-//             maximumTrackTintColor="#A5D6A7"
-//             thumbTintColor="#388E3C"
-//             disabled={locked}
-//           />
-//         </View>
-
-//         <View style={styles.sliderGroup}>
-//           <Text style={styles.label}>Time to Dispense: {dispenseTime}ms</Text>
-//           <Slider
-//             style={styles.slider}
-//             minimumValue={0}
-//             maximumValue={5000}
-//             value={dispenseTime}
-//             onValueChange={(value) => !locked && setDispenseTime(value)}
-//             minimumTrackTintColor="#FFB300"
-//             maximumTrackTintColor="#FFD54F"
-//             thumbTintColor="#FF8F00"
-//             disabled={locked}
-//           />
-//         </View>
-
-//         <Button
-//           mode="contained"
-//           onPress={handleSetValues}
-//           style={[styles.setButton, locked ? styles.lockedButton : {}]}
-//           labelStyle={styles.buttonText}
-//         >
-//           {locked ? "Unlock" : "Set"}
-//         </Button>
-//       </Surface>
-//     </ScrollView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   scrollContainer: {
-//     flexGrow: 1,
-//     justifyContent: "center",
-//     padding: 10,
-//   },
-//   container: {
-//     backgroundColor: "#FAFAFA",
-//     padding: 20,
-//     borderRadius: 12,
-//     elevation: 3,
-//     marginHorizontal: 20,
-//     shadowColor: "#000",
-//     shadowOffset: { width: 0, height: 3 },
-//     shadowOpacity: 0.2,
-//     shadowRadius: 4,
-//   },
-//   title: {
-//     fontSize: 22,
-//     fontWeight: "bold",
-//     textAlign: "center",
-//     marginBottom: 15,
-//     color: "#2E7D32",
-//   },
-//   toggleButton: {
-//     alignSelf: "center",
-//     width: "80%",
-//     borderRadius: 8,
-//     paddingVertical: 8,
-//     marginBottom: 15,
-//   },
-//   buttonOn: {
-//     backgroundColor: "#388E3C",
-//   },
-//   buttonOff: {
-//     backgroundColor: "#D32F2F",
-//   },
-//   buttonText: {
-//     fontSize: 16,
-//     fontWeight: "bold",
-//     color: "#FFFFFF",
-//   },
-//   sliderGroup: {
-//     marginVertical: 10,
-//     paddingHorizontal: 10,
-//   },
-//   label: {
-//     fontSize: 16,
-//     fontWeight: "600",
-//     marginBottom: 5,
-//     color: "#424242",
-//     textAlign: "center",
-//   },
-//   slider: {
-//     width: "100%",
-//   },
-//   setButton: {
-//     marginTop: 15,
-//     backgroundColor: "#1976D2",
-//     alignSelf: "center",
-//     borderRadius: 8,
-//     width: "80%",
-//     paddingVertical: 8,
-//   },
-//   lockedButton: {
-//     backgroundColor: "#757575",
-//   },
-// });
-
-// export default SmartIrrigation;
-
-
-
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Switch, Dimensions, Button } from 'react-native';
-import Slider from '@react-native-community/slider';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Dimensions, 
+  TouchableOpacity,
+  SafeAreaView,
+  PanResponder
+} from 'react-native';
 import dgram from 'react-native-udp';
 import { Buffer } from 'buffer';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const ESP32_IP = '192.168.0.196'; // Change this to your ESP32 IP
+const ESP32_IP = 'esptest.local';
 const ESP32_PORT = 8888;
 
-export default function SmartIrrigation() {
+export default function MorningAlarm() {
+  const [darkThreshold, setDarkThreshold] = useState(0);
+  const [buzzerValue, setBuzzerValue] = useState(0);
   const [isOn, setIsOn] = useState(false);
-  const [moistureThreshold, setMoistureThreshold] = useState(2000);
-  const [dispenseTime, setDispenseTime] = useState(2000);
-  const [locked, setLocked] = useState(false);
   const lastSentTime = useRef(0);
 
-  const sendUDPCommand = (moisture, time) => {
+  const darknessSliderRef = useRef(null);
+  const buzzerSliderRef = useRef(null);
+
+  const [darknessSliderWidth, setDarknessSliderWidth] = useState(0);
+  const [buzzerSliderWidth, setBuzzerSliderWidth] = useState(0);
+
+  const sendUDPCommand = (darkness, buzzer) => {
     const now = Date.now();
     if (now - lastSentTime.current < 50) return;
     lastSentTime.current = now;
-
+  
     const client = dgram.createSocket('udp4');
-    const moistureValue = Math.round(moisture);
-    const timeValue = Math.round(time);
-    const message = Buffer.from([0xE2, moistureValue >> 8, moistureValue & 0xFF, timeValue >> 8, timeValue & 0xFF]);
-
+    const darknessValue = Math.round(darkness);
+    const buzzerVal = Math.round(buzzer);
+  
+    const message = Buffer.from([darkness === 0 && buzzer === 0 ? 0xC0 : 0xE1, darknessValue, buzzerVal]);
+  
     client.on('error', (err) => {
       console.error('UDP Socket Error:', err);
       client.close();
     });
-
+  
     client.bind(0, () => {
       client.send(message, 0, message.length, ESP32_PORT, ESP32_IP, (err) => {
         if (err) console.error('Send Error:', err);
         client.close();
       });
     });
-
-    console.log(`📡 Sent UDP: E2 ${moistureValue}ms ${timeValue}ms`);
+  
+    console.log(`📡 Sent UDP: ${darkness === 0 && buzzer === 0 ? 'C0' : 'E2'} ${darknessValue} ${buzzerVal}`);
   };
-
-  const sendOffCommand = () => {
-    const now = Date.now();
-    if (now - lastSentTime.current < 50) return;
-    lastSentTime.current = now;
-
-    const client = dgram.createSocket('udp4');
-    const message = Buffer.from([0xD9]);
-
-    client.on('error', (err) => {
-      console.error('UDP Socket Error:', err);
-      client.close();
-    });
-
-    client.bind(0, () => {
-      client.send(message, 0, message.length, ESP32_PORT, ESP32_IP, (err) => {
-        if (err) console.error('Send Error:', err);
-        client.close();
-      });
-    });
-
-    console.log('📡 Sent UDP: D9');
-  };
-
+  
   const handleToggle = () => {
     const newState = !isOn;
     setIsOn(newState);
-    if (newState) {
-      sendUDPCommand(moistureThreshold, dispenseTime);
-    } else {
-      sendOffCommand();
-    }
+  
+    const client = dgram.createSocket('udp4');
+    const darknessValue = Math.round(darkThreshold);
+    const buzzerVal = Math.round(buzzerValue);
+  
+    const message = newState
+      ? Buffer.from([0xE2, darknessValue, buzzerVal])  // Send values with E0
+      : Buffer.from([0xC0]); // Just send C0 when turning off
+  
+    client.on('error', (err) => {
+      console.error('UDP Socket Error:', err);
+      client.close();
+    });
+  
+    client.bind(0, () => {
+      client.send(message, 0, message.length, ESP32_PORT, ESP32_IP, (err) => {
+        if (err) console.error('Send Error:', err);
+        client.close();
+      });
+    });
+  
+    console.log(`📡 Sent UDP: ${newState ? 'E0' : 'C0'} ${newState ? `${darknessValue} ${buzzerVal}` : ''}`);
+  };
+  
+
+  const updateDarkThreshold = (xPosition) => {
+    const relativeX = Math.max(0, Math.min(xPosition, darknessSliderWidth));
+    const newValue = Math.round((relativeX / darknessSliderWidth) * 100);
+    setDarkThreshold(newValue);
   };
 
-  const handleMoistureChange = (value) => {
-    if (!locked) setMoistureThreshold(value);
+  const updateBuzzerValue = (xPosition) => {
+    const relativeX = Math.max(0, Math.min(xPosition, buzzerSliderWidth));
+    const newValue = Math.round((relativeX / buzzerSliderWidth) * 100);
+    setBuzzerValue(newValue);
   };
 
-  const handleDispenseChange = (value) => {
-    if (!locked) setDispenseTime(value);
-  };
+  const darknessPanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (evt) => {
+      if (darknessSliderRef.current) {
+        darknessSliderRef.current.measure((fx, fy, width, height, px, py) => {
+          const touchX = evt.nativeEvent.locationX;
+          updateDarkThreshold(touchX);
+        });
+      }
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (darknessSliderRef.current) {
+        darknessSliderRef.current.measure((fx, fy, width, height, px, py) => {
+          const touchX = gestureState.moveX - px;
+          updateDarkThreshold(touchX);
+        });
+      }
+    },
+  });
 
-  const handleSetValues = () => {
-    setLocked((prev) => !prev);
-    if (!locked) sendUDPCommand(moistureThreshold, dispenseTime);
-  };
+  const buzzerPanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (evt) => {
+      if (buzzerSliderRef.current) {
+        buzzerSliderRef.current.measure((fx, fy, width, height, px, py) => {
+          const touchX = evt.nativeEvent.locationX;
+          updateBuzzerValue(touchX);
+        });
+      }
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (buzzerSliderRef.current) {
+        buzzerSliderRef.current.measure((fx, fy, width, height, px, py) => {
+          const touchX = gestureState.moveX - px;
+          updateBuzzerValue(touchX);
+        });
+      }
+    },
+  });
 
   return (
-    <View style={styles.container}>
-      <View style={styles.controlsBox}>
-        <View style={styles.topRow}>
-          <View style={styles.controlGroup}>
-            <Text style={styles.label}>🌱 <Text style={styles.boldText}>Irrigation {isOn ? 'ON' : 'OFF'}</Text></Text>
-            <Switch
-              trackColor={{ false: '#ff9999', true: '#99ff99' }}
-              thumbColor={'#ffffff'}
-              ios_backgroundColor="#3e3e3e"
-              onValueChange={handleToggle}
-              value={isOn}
-              style={styles.switch}
-            />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.contentContainer}>
+        <View style={styles.headerContainerWrapper}>
+          <View style={styles.headerContainer}>
+            <View style={styles.headerContent}>
+              {/* Changed the icon */}
+              <Icon name="weather-sunny" size={24} color="white" style={styles.iconMargin} />
+              <Text style={styles.headerText}>Smart Irrigation</Text>
+            </View>
           </View>
-          <Text style={[styles.plantIcon, isOn && styles.plantActive]}>💧</Text>
         </View>
 
-        <View style={styles.controlGroup}>
-          <Text style={styles.label}>🌧️ Moisture Threshold: {moistureThreshold}ms</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={5000}
-            step={100}
-            value={moistureThreshold}
-            onValueChange={handleMoistureChange}
-            minimumTrackTintColor="#4CAF50"
-            maximumTrackTintColor="#A5D6A7"
-            thumbTintColor="#388E3C"
-            disabled={locked}
+        <View style={styles.controlsGrid}>
+          <View style={styles.controlsRow}>
+            <View style={styles.controlContainer}>
+              <View style={styles.labelRow}>
+                {/* Changed the icon */}
+                <Icon name="weather-cloudy" size={20} color="white" style={styles.iconMargin} />
+                <Text style={styles.labelText}>Dryness</Text>
+                <View style={styles.valueDisplayContainer}>
+                  <Text style={styles.valueText}>{darkThreshold}</Text>
+                </View>
+              </View>
+              <View
+                style={styles.sliderContainer}
+                ref={darknessSliderRef}
+                onLayout={(event) => {
+                  const { width } = event.nativeEvent.layout;
+                  setDarknessSliderWidth(width);
+                }}
+                {...darknessPanResponder.panHandlers}
+              >
+                <View style={styles.slider}>
+                  <View style={[styles.sliderTrack, { width: `${darkThreshold}%` }]} />
+                  <View style={[styles.sliderThumb, { left: `${darkThreshold}%` }]} />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.controlContainer}>
+              <View style={styles.labelRow}>
+                {/* Changed the icon */}
+                <Icon name="bell-ring" size={20} color="white" style={styles.iconMargin} />
+                <Text style={styles.labelText}>Dispense time</Text>
+                <View style={styles.valueDisplayContainer}>
+                  <Text style={styles.valueText}>{buzzerValue}</Text>
+                </View>
+              </View>
+              <View
+                style={styles.sliderContainer}
+                ref={buzzerSliderRef}
+                onLayout={(event) => {
+                  const { width } = event.nativeEvent.layout;
+                  setBuzzerSliderWidth(width);
+                }}
+                {...buzzerPanResponder.panHandlers}
+              >
+                <View style={styles.slider}>
+                  <View style={[styles.sliderTrack, { width: `${buzzerValue}%` }]} />
+                  <View style={[styles.sliderThumb, { left: `${buzzerValue}%` }]} />
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.setButton,
+            { backgroundColor: isOn ? '#F149A1' : '#F149A1' },
+          ]}
+          onPress={handleToggle}
+        >
+          <Icon
+            name={isOn ? 'power' : 'power-standby'}  
+            size={24}
+            color="white"
+            style={styles.iconMargin}
           />
-        </View>
-
-        <View style={styles.controlGroup}>
-          <Text style={styles.label}>⏲️ Dispense Time: {dispenseTime}ms</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={10000}
-            step={100}
-            value={dispenseTime}
-            onValueChange={handleDispenseChange}
-            minimumTrackTintColor="#2196F3"
-            maximumTrackTintColor="#90CAF9"
-            thumbTintColor="#1565C0"
-            disabled={locked}
-          />
-        </View>
-
-        <Button title={locked ? 'Unlock' : 'Set'} onPress={handleSetValues} />
+          <Text style={styles.buttonText}>{isOn ? 'ON' : 'OFF'}</Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#4B2E83',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
-    padding: 20,
   },
-  controlsBox: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
+  contentContainer: {
     width: width * 0.9,
+    padding: 20,
+    backgroundColor: '#673AB7',
+    borderRadius: 30,
+    alignItems: 'center',
+    position: 'relative',
   },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  headerContainerWrapper: {
+    position: 'absolute',
+    top: -25,
+    width: '100%',
     alignItems: 'center',
   },
-  controlGroup: {
-    marginVertical: 10,
+  headerContainer: {
+    alignItems: 'center',
   },
-  label: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#4A4A4A',
-    marginBottom: 10,
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F149A1',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 30,
   },
-  boldText: {
+  iconMargin: {
+    marginRight: 10,
+  },
+  headerText: {
+    color: 'white',
+    fontSize: 24,
     fontWeight: 'bold',
   },
-  switch: {
-    transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
+  controlsGrid: {
+    width: '100%',
+    marginTop: 30,
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  controlContainer: {
+    width: '48%',
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  labelText: {
+    color: 'white',
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  valueDisplayContainer: {
+    backgroundColor: '#F149A1',
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 'auto',
+  },
+  valueText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  sliderContainer: {
+    width: '100%',
+    height: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 5,
   },
   slider: {
     width: '100%',
-    height: 40,
+    height: 8,
+    backgroundColor: '#483285',
+    borderRadius: 4,
+    position: 'relative',
   },
-  plantIcon: {
-    fontSize: 50,
-    opacity: 0.3,
+  sliderTrack: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#FFEB3B',
+    borderRadius: 4,
   },
-  plantActive: {
-    opacity: 1,
-    color: '#2196F3',
-    textShadowColor: '#1565C0',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+  sliderThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'white',
+    position: 'absolute',
+    top: -6,
+    marginLeft: -10,
+    elevation: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  setButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 50,
+    borderRadius: 30,
+    marginTop: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });
